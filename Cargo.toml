@@ -1,0 +1,31 @@
+[package]
+name = "rurich"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Pure native Rust terminal formatting, tables, markdown, syntax highlighting, and progress displays."
+authors = ["koresent"]
+
+[dependencies]
+crossterm = { version = "0.28", features = ["windows"] }
+unicode-width = "0.2"
+unicode-segmentation = "1.12"
+bitflags = "2.6"
+regex = "1.11"
+
+# Optional extensions for later phases
+pulldown-cmark = { version = "0.12", optional = true }
+syntect = { version = "5.3", optional = true, default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
+serde = { version = "1.0", optional = true, features = ["derive"] }
+serde_json = { version = "1.0", optional = true }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+
+[features]
+default = ["markdown", "json"]
+full = ["markdown", "syntax", "json", "tracing", "serde"]
+markdown = ["dep:pulldown-cmark"]
+syntax = ["dep:syntect"]
+json = ["dep:serde", "dep:serde_json"]
+tracing = ["dep:tracing", "dep:tracing-subscriber"]
+serde = ["dep:serde"]
