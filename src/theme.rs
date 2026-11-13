@@ -1,6 +1,40 @@
 use crate::default_styles::DEFAULT_STYLES;
 use crate::style::Style;
 use std::collections::HashMap;
+use std::sync::{LazyLock, RwLock};
+
+static GLOBAL_THEME: LazyLock<RwLock<Theme>> = LazyLock::new(|| RwLock::new(Theme::default()));
+
+pub fn get_theme_style(name: &str) -> Option<Style> {
+    if let Ok(theme) = GLOBAL_THEME.read() {
+        if let Some(s) = theme.get(name) {
+            return Some(s);
+        }
+    }
+    DEFAULT_STYLES.get(name).cloned()
+}
+
+pub fn set_global_theme(theme: Theme) {
+    if let Ok(mut g) = GLOBAL_THEME.write() {
+        *g = theme;
+    }
+}
+
+pub fn get_global_theme() -> Theme {
+    GLOBAL_THEME
+        .read()
+        .map(|g| g.clone())
+        .unwrap_or_else(|_| Theme::default())
+}
+
+pub fn update_global_theme<F>(f: F)
+where
+    F: FnOnce(&mut Theme),
+{
+    if let Ok(mut g) = GLOBAL_THEME.write() {
+        f(&mut g);
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Theme {

@@ -46,11 +46,16 @@ impl Console {
             is_terminal,
             width: None,
             height: None,
-            theme: Theme::default(),
+            theme: crate::theme::get_global_theme(),
             no_color,
             buffer: Arc::new(Mutex::new(Vec::new())),
             is_capturing: Arc::new(Mutex::new(false)),
         }
+    }
+
+    pub fn with_theme(mut self, theme: Theme) -> Self {
+        self.theme = theme;
+        self
     }
 
     pub fn with_dimensions(width: usize, height: usize) -> Self {

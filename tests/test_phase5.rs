@@ -3,6 +3,7 @@ use rurich::console::Console;
 use rurich::json::Json;
 use rurich::markdown::Markdown;
 use rurich::pretty::Pretty;
+#[cfg(feature = "syntax")]
 use rurich::syntax::Syntax;
 use rurich::tree::{ASCII_GUIDES, BOLD_GUIDES, DOUBLE_GUIDES, Tree};
 
@@ -138,6 +139,7 @@ fn test_pretty_repr_debug() {
 }
 
 #[test]
+#[cfg(feature = "syntax")]
 fn test_syntax_highlighting_line_numbers_and_ranges() {
     let code = r#"def calculate_sum(a, b):
     # Sum two numbers

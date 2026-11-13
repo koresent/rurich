@@ -142,8 +142,8 @@ impl Style {
         new_style
     }
 
-    /// Parse style string, e.g. "bold red on white link https://example.com"
-    pub fn parse(s: &str) -> Result<Self, RurichError> {
+    /// Parse style string without theme resolution (used for default styles to prevent recursion)
+    pub fn parse_raw(s: &str) -> Result<Self, RurichError> {
         let s = s.trim();
         if s.is_empty() || s == "none" {
             return Ok(Self::null());
@@ -245,6 +245,130 @@ impl Style {
                     style.set_attributes.insert(StyleAttributes::OVERLINE);
                 }
                 _ => {
+                    let color = Color::parse(word)?;
+                    style.color = Some(color);
+                }
+            }
+        }
+
+        Ok(style)
+    }
+
+    /// Parse style string, e.g. "bold red on white link https://example.com"
+    pub fn parse(s: &str) -> Result<Self, RurichError> {
+        let s = s.trim();
+        if s.is_empty() || s == "none" {
+            return Ok(Self::null());
+        }
+
+        let mut style = Self::new();
+        let mut words = s.split_whitespace().peekable();
+
+        while let Some(word) = words.next() {
+            let lower = word.to_lowercase();
+            match lower.as_str() {
+                "on" => {
+                    let bg_word = words.next().ok_or_else(|| {
+                        RurichError::StyleSyntaxError("Color expected after 'on'".into())
+                    })?;
+                    let bg_lower = bg_word.to_lowercase();
+                    if let Some(theme_style) = crate::theme::get_theme_style(&bg_lower) {
+                        if let Some(c) = theme_style.color {
+                            style.bgcolor = Some(c);
+                            continue;
+                        }
+                    }
+                    let color = Color::parse(bg_word)?;
+                    style.bgcolor = Some(color);
+                }
+                "link" => {
+                    let link_url = words.next().ok_or_else(|| {
+                        RurichError::StyleSyntaxError("URL expected after 'link'".into())
+                    })?;
+                    style.link = Some(link_url.to_string());
+                }
+                "bold" | "b" => {
+                    style.attributes.insert(StyleAttributes::BOLD);
+                    style.set_attributes.insert(StyleAttributes::BOLD);
+                }
+                "not" => {
+                    let next_word = words.next().ok_or_else(|| {
+                        RurichError::StyleSyntaxError("Attribute expected after 'not'".into())
+                    })?;
+                    match next_word.to_lowercase().as_str() {
+                        "bold" | "b" => {
+                            style.attributes.remove(StyleAttributes::BOLD);
+                            style.set_attributes.insert(StyleAttributes::BOLD);
+                        }
+                        "dim" | "d" => {
+                            style.attributes.remove(StyleAttributes::DIM);
+                            style.set_attributes.insert(StyleAttributes::DIM);
+                        }
+                        "italic" | "i" => {
+                            style.attributes.remove(StyleAttributes::ITALIC);
+                            style.set_attributes.insert(StyleAttributes::ITALIC);
+                        }
+                        "underline" | "u" => {
+                            style.attributes.remove(StyleAttributes::UNDERLINE);
+                            style.set_attributes.insert(StyleAttributes::UNDERLINE);
+                        }
+                        "strike" | "s" => {
+                            style.attributes.remove(StyleAttributes::STRIKE);
+                            style.set_attributes.insert(StyleAttributes::STRIKE);
+                        }
+                        "reverse" | "r" => {
+                            style.attributes.remove(StyleAttributes::REVERSE);
+                            style.set_attributes.insert(StyleAttributes::REVERSE);
+                        }
+                        "blink" => {
+                            style.attributes.remove(StyleAttributes::BLINK);
+                            style.set_attributes.insert(StyleAttributes::BLINK);
+                        }
+                        "overline" | "o" => {
+                            style.attributes.remove(StyleAttributes::OVERLINE);
+                            style.set_attributes.insert(StyleAttributes::OVERLINE);
+                        }
+                        other => {
+                            return Err(RurichError::StyleSyntaxError(format!(
+                                "Unknown attribute after 'not': {other}"
+                            )));
+                        }
+                    }
+                }
+                "dim" | "d" => {
+                    style.attributes.insert(StyleAttributes::DIM);
+                    style.set_attributes.insert(StyleAttributes::DIM);
+                }
+                "italic" | "i" => {
+                    style.attributes.insert(StyleAttributes::ITALIC);
+                    style.set_attributes.insert(StyleAttributes::ITALIC);
+                }
+                "underline" | "u" => {
+                    style.attributes.insert(StyleAttributes::UNDERLINE);
+                    style.set_attributes.insert(StyleAttributes::UNDERLINE);
+                }
+                "strike" | "s" => {
+                    style.attributes.insert(StyleAttributes::STRIKE);
+                    style.set_attributes.insert(StyleAttributes::STRIKE);
+                }
+                "reverse" | "r" => {
+                    style.attributes.insert(StyleAttributes::REVERSE);
+                    style.set_attributes.insert(StyleAttributes::REVERSE);
+                }
+                "blink" => {
+                    style.attributes.insert(StyleAttributes::BLINK);
+                    style.set_attributes.insert(StyleAttributes::BLINK);
+                }
+                "overline" | "o" => {
+                    style.attributes.insert(StyleAttributes::OVERLINE);
+                    style.set_attributes.insert(StyleAttributes::OVERLINE);
+                }
+                _ => {
+                    // Check if word is a theme style or semantic name
+                    if let Some(theme_style) = crate::theme::get_theme_style(&lower) {
+                        style = style.combine(&theme_style);
+                        continue;
+                    }
                     // Try parsing as foreground color
                     let color = Color::parse(word)?;
                     style.color = Some(color);

@@ -218,4 +218,11 @@ mod tests {
             Some("https://example.com")
         );
     }
+
+    #[test]
+    fn test_render_semantic_and_theme_tags() {
+        let text = render("[header]Title[/header] - [ok]Done[/ok] - [warn]Warning[/warn] - [err]Error[/err] - [orange]10[/orange]").unwrap();
+        assert_eq!(text.plain, "Title - Done - Warning - Error - 10");
+        assert_eq!(text.spans.len(), 5);
+    }
 }

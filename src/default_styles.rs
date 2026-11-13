@@ -29,11 +29,22 @@ pub static DEFAULT_STYLES: LazyLock<HashMap<&'static str, Style>> = LazyLock::ne
         ("cyan", "cyan"),
         ("white", "white"),
         // Semantic styles
-        ("info", "dim cyan"),
+        ("info", "bold cyan"),
         ("warning", "bold yellow"),
+        ("warn", "bold yellow"),
         ("danger", "bold red"),
         ("error", "bold red"),
+        ("err", "bold red"),
         ("success", "bold green"),
+        ("ok", "bold green"),
+        ("accent", "bold cyan"),
+        ("header", "bold cyan"),
+        ("muted", "dim"),
+        ("key", "bold yellow"),
+        ("val", "none"),
+        ("path", "cyan"),
+        ("orange", "color(214)"),
+        ("purple", "magenta"),
         // Repr styles
         ("repr.str", "green"),
         ("repr.brace", "bold"),
@@ -65,7 +76,7 @@ pub static DEFAULT_STYLES: LazyLock<HashMap<&'static str, Style>> = LazyLock::ne
     ];
 
     for &(name, def) in entries {
-        if let Ok(style) = Style::parse(def) {
+        if let Ok(style) = Style::parse_raw(def) {
             m.insert(name, style);
         }
     }

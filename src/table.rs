@@ -340,6 +340,10 @@ impl Table {
                 col_max = col_max.min(max_w);
             }
 
+            if col.no_wrap {
+                col_min = col_max;
+            }
+
             min_widths[col_idx] = col_min;
             max_widths[col_idx] = col_max;
         }
@@ -529,9 +533,12 @@ impl Renderable for Table {
             let mut rendered_cells: Vec<Vec<Vec<Segment<'static>>>> = Vec::new();
             let mut max_cell_lines = 1;
 
-            for (col_idx, _col) in self.columns.iter().enumerate() {
+            for (col_idx, col) in self.columns.iter().enumerate() {
                 let w = widths[col_idx].saturating_sub(pad_h * 2);
-                let col_opts = options.update_width(w);
+                let mut col_opts = options.update_width(w);
+                if col.no_wrap {
+                    col_opts.no_wrap = true;
+                }
 
                 let cell_lines = if let Some(cell) = row.cells.get(col_idx) {
                     console.render_lines_owned(cell.as_ref(), Some(&col_opts), false)

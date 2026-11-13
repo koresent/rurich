@@ -103,7 +103,7 @@ pub use styled::Styled;
 pub use syntax::Syntax;
 pub use table::{Column, Row, Table};
 pub use text::{Span, Text};
-pub use theme::Theme;
+pub use theme::{Theme, get_global_theme, get_theme_style, set_global_theme, update_global_theme};
 pub use traceback::{StackFrame, Traceback};
 pub use tree::{ASCII_GUIDES, BOLD_GUIDES, DEFAULT_GUIDES, DOUBLE_GUIDES, Tree, TreeGuides};
 

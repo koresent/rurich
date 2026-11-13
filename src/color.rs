@@ -360,6 +360,7 @@ pub static ANSI_COLOR_NAMES: LazyLock<HashMap<&'static str, u8>> = LazyLock::new
         ("magenta", 5),
         ("cyan", 6),
         ("white", 7),
+        ("orange", 214),
         ("bright_black", 8),
         ("bright_red", 9),
         ("bright_green", 10),
