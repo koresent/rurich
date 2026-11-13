@@ -868,13 +868,13 @@ mod tests {
             table.add_column(Column::new().header("Reason"));
             table.add_row([
                 "cache",
-                "/home/koresent/.cache/zen",
-                "app process running (zen/zen-bin/zen-browser)",
+                "/var/cache/app-data/browser-profile",
+                "background daemon active (browser-process)",
             ]);
             table.add_row([
                 "cache",
-                "/home/koresent/.cache/vicinae-extensions-src",
-                "app process running (vicinae/npm/node)",
+                "/var/cache/app-data/long-extension-name-service-worker",
+                "background worker active (worker-thread)",
             ]);
 
             let out = console.capture(|c| {
