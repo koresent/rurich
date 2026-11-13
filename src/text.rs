@@ -278,11 +278,17 @@ impl Text {
                     }
                     // If a single word is wider than width, break it down
                     if word_len > width {
-                        let (left, right) = split_cells(word, width);
-                        current_line.append(&left, None);
-                        current_line.rstrip();
-                        lines.push(std::mem::take(&mut current_line));
-                        current_line.append(&right, None);
+                        let mut remaining = word.to_string();
+                        while cell_len(&remaining) > width && width > 0 {
+                            let (left, right) = split_cells(&remaining, width);
+                            current_line.append(&left, None);
+                            current_line.rstrip();
+                            lines.push(std::mem::take(&mut current_line));
+                            remaining = right;
+                        }
+                        if !remaining.is_empty() {
+                            current_line.append(&remaining, None);
+                        }
                     } else {
                         current_line.append(word, None);
                     }

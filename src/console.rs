@@ -107,13 +107,34 @@ impl Console {
             return ConsoleDimensions::new(w, h);
         }
 
-        if let Ok((cols, rows)) = terminal::size() {
-            let w = self.width.unwrap_or(cols as usize);
-            let h = self.height.unwrap_or(rows as usize);
-            ConsoleDimensions::new(w, h)
-        } else {
-            ConsoleDimensions::new(self.width.unwrap_or(80), self.height.unwrap_or(25))
+        let mut term_w = None;
+        let mut term_h = None;
+
+        if let Ok(col_env) = env::var("COLUMNS")
+            && let Ok(w) = col_env.parse::<usize>()
+        {
+            term_w = Some(w);
         }
+        if let Ok(line_env) = env::var("LINES")
+            && let Ok(h) = line_env.parse::<usize>()
+        {
+            term_h = Some(h);
+        }
+
+        if (term_w.is_none() || term_h.is_none())
+            && let Ok((cols, rows)) = terminal::size()
+        {
+            if term_w.is_none() {
+                term_w = Some(cols as usize);
+            }
+            if term_h.is_none() {
+                term_h = Some(rows as usize);
+            }
+        }
+
+        let w = self.width.or(term_w).unwrap_or(80);
+        let h = self.height.or(term_h).unwrap_or(25);
+        ConsoleDimensions::new(w, h)
     }
 
     pub fn options(&self) -> ConsoleOptions {

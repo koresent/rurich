@@ -101,7 +101,7 @@ impl IntoCell for &str {
         {
             return Box::new(text);
         }
-        Box::new(self.to_string())
+        Box::new(Text::from_plain(self))
     }
 }
 
@@ -112,7 +112,7 @@ impl IntoCell for String {
         {
             return Box::new(text);
         }
-        Box::new(self)
+        Box::new(Text::from_plain(self))
     }
 }
 
@@ -340,32 +340,31 @@ impl Table {
                 col_max = col_max.min(max_w);
             }
 
-            if col.no_wrap {
-                col_min = col_max;
-            }
-
             min_widths[col_idx] = col_min;
             max_widths[col_idx] = col_max;
         }
 
         let mut widths = max_widths.clone();
-        let total_desired: usize = widths.iter().sum();
+        let mut table_width: usize = widths.iter().sum();
 
-        if total_desired > available_content_width {
-            // Need to shrink columns
-            let excess = total_desired - available_content_width;
-            let ratios: Vec<usize> = self.columns.iter().map(|c| c.ratio.unwrap_or(1)).collect();
-            let maximum_cuts: Vec<usize> = widths
+        if table_width > available_content_width {
+            let wrapable: Vec<bool> = self
+                .columns
                 .iter()
-                .zip(&min_widths)
-                .map(|(&w, &min)| w.saturating_sub(min))
+                .map(|c| c.width.is_none() && !c.no_wrap)
                 .collect();
 
-            let reduced = ratio_reduce(excess, &ratios, &maximum_cuts, &widths);
-            widths = reduced;
-        } else if self.expand && total_desired < available_content_width {
-            // Expand flexible columns
-            let extra_space = available_content_width - total_desired;
+            widths = collapse_widths(widths, &wrapable, available_content_width);
+            table_width = widths.iter().sum();
+
+            // Last resort: reduce columns evenly (even non-wrapping ones)
+            if table_width > available_content_width {
+                let excess_width = table_width - available_content_width;
+                let ratios = vec![1; widths.len()];
+                widths = ratio_reduce(excess_width, &ratios, &widths, &widths);
+            }
+        } else if self.expand && table_width < available_content_width {
+            let extra_space = available_content_width - table_width;
             let ratios: Vec<usize> = self.columns.iter().map(|c| c.ratio.unwrap_or(1)).collect();
             let distributed = ratio_distribute(extra_space, &ratios, None);
             for (w, add) in widths.iter_mut().zip(distributed) {
@@ -375,6 +374,71 @@ impl Table {
 
         widths
     }
+}
+
+fn collapse_widths(
+    mut widths: Vec<usize>,
+    wrapable: &[bool],
+    max_width: usize,
+) -> Vec<usize> {
+    let mut total_width: usize = widths.iter().sum();
+    if !wrapable.iter().any(|&w| w) {
+        return widths;
+    }
+
+    while total_width > max_width {
+        let excess_width = total_width - max_width;
+
+        let max_column = widths
+            .iter()
+            .zip(wrapable)
+            .filter_map(|(&w, &allow)| if allow { Some(w) } else { None })
+            .max()
+            .unwrap_or(0);
+
+        if max_column == 0 {
+            break;
+        }
+
+        let second_max_column = widths
+            .iter()
+            .zip(wrapable)
+            .filter_map(|(&w, &allow)| {
+                if allow && w != max_column {
+                    Some(w)
+                } else {
+                    None
+                }
+            })
+            .max()
+            .unwrap_or(0);
+
+        let column_difference = max_column - second_max_column;
+        if column_difference == 0 {
+            break;
+        }
+
+        let ratios: Vec<usize> = widths
+            .iter()
+            .zip(wrapable)
+            .map(|(&w, &allow)| if allow && w == max_column { 1 } else { 0 })
+            .collect();
+
+        if !ratios.iter().any(|&r| r > 0) {
+            break;
+        }
+
+        let max_reduce = vec![excess_width.min(column_difference); widths.len()];
+        widths = ratio_reduce(excess_width, &ratios, &max_reduce, &widths);
+
+        let new_total: usize = widths.iter().sum();
+        if new_total == total_width {
+            break;
+        }
+        total_width = new_total;
+    }
+
+    widths
 }
 
 impl Renderable for Table {
@@ -401,7 +465,10 @@ impl Renderable for Table {
                 } else {
                     0
                 };
-            let title_opts = options.update_width(total_w);
+            let mut title_opts = options.update_width(total_w);
+            if title_opts.justify.is_none() {
+                title_opts.justify = Some(JustifyMethod::Center);
+            }
             let mut title_segs = Vec::new();
             title.render_to(console, &title_opts, &mut title_segs);
             sink.extend(title_segs);
@@ -427,8 +494,16 @@ impl Renderable for Table {
             let mut max_header_lines = 1;
 
             for (col_idx, col) in self.columns.iter().enumerate() {
-                let w = widths[col_idx].saturating_sub(pad_h * 2);
-                let col_opts = options.update_width(w);
+                let col_w = widths[col_idx];
+                let (l_pad, r_pad) = if col_w >= pad_h * 2 {
+                    (pad_h, pad_h)
+                } else if col_w >= pad_h {
+                    (pad_h, 0)
+                } else {
+                    (0, 0)
+                };
+                let inner_w = col_w.saturating_sub(l_pad + r_pad);
+                let col_opts = options.update_width(inner_w);
                 let lines = if let Some(ref h) = col.header {
                     let mut styled_header = h.clone();
                     if let Some(ref s) = col.header_style {
@@ -455,17 +530,26 @@ impl Renderable for Table {
 
                 for (col_idx, col) in self.columns.iter().enumerate() {
                     let col_w = widths[col_idx];
-                    let inner_w = col_w.saturating_sub(pad_h * 2);
-                    let left_pad = " ".repeat(pad_h);
-                    let right_pad = " ".repeat(pad_h);
+                    let (l_pad, r_pad) = if col_w >= pad_h * 2 {
+                        (pad_h, pad_h)
+                    } else if col_w >= pad_h {
+                        (pad_h, 0)
+                    } else {
+                        (0, 0)
+                    };
+                    let inner_w = col_w.saturating_sub(l_pad + r_pad);
 
-                    sink.push(Segment::unstyled(Cow::Owned(left_pad)));
+                    if l_pad > 0 {
+                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(l_pad))));
+                    }
 
                     let empty_line = Vec::new();
-                    let line = header_rendered_cols[col_idx]
+                    let raw_line = header_rendered_cols[col_idx]
                         .get(line_idx)
                         .unwrap_or(&empty_line);
-                    let line_len = Segment::get_line_length(line);
+                    let adjusted_line =
+                        Segment::adjust_line_length(raw_line.clone(), inner_w, None, false);
+                    let line_len = Segment::get_line_length(&adjusted_line);
 
                     let (align_left, align_right) = if line_len < inner_w {
                         let diff = inner_w - line_len;
@@ -485,12 +569,14 @@ impl Renderable for Table {
                     if align_left > 0 {
                         sink.push(Segment::unstyled(Cow::Owned(" ".repeat(align_left))));
                     }
-                    sink.extend(line.clone());
+                    sink.extend(adjusted_line);
                     if align_right > 0 {
                         sink.push(Segment::unstyled(Cow::Owned(" ".repeat(align_right))));
                     }
 
-                    sink.push(Segment::unstyled(Cow::Owned(right_pad)));
+                    if r_pad > 0 {
+                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(r_pad))));
+                    }
 
                     if let Some(b) = border_box
                         && col_idx + 1 < self.columns.len()
@@ -534,8 +620,16 @@ impl Renderable for Table {
             let mut max_cell_lines = 1;
 
             for (col_idx, col) in self.columns.iter().enumerate() {
-                let w = widths[col_idx].saturating_sub(pad_h * 2);
-                let mut col_opts = options.update_width(w);
+                let col_w = widths[col_idx];
+                let (l_pad, r_pad) = if col_w >= pad_h * 2 {
+                    (pad_h, pad_h)
+                } else if col_w >= pad_h {
+                    (pad_h, 0)
+                } else {
+                    (0, 0)
+                };
+                let inner_w = col_w.saturating_sub(l_pad + r_pad);
+                let mut col_opts = options.update_width(inner_w);
                 if col.no_wrap {
                     col_opts.no_wrap = true;
                 }
@@ -562,15 +656,33 @@ impl Renderable for Table {
 
                 for (col_idx, col) in self.columns.iter().enumerate() {
                     let col_w = widths[col_idx];
-                    let inner_w = col_w.saturating_sub(pad_h * 2);
-                    let left_pad = " ".repeat(pad_h);
-                    let right_pad = " ".repeat(pad_h);
+                    let (l_pad, r_pad) = if col_w >= pad_h * 2 {
+                        (pad_h, pad_h)
+                    } else if col_w >= pad_h {
+                        (pad_h, 0)
+                    } else {
+                        (0, 0)
+                    };
+                    let inner_w = col_w.saturating_sub(l_pad + r_pad);
 
-                    sink.push(Segment::unstyled(Cow::Owned(left_pad)));
+                    if l_pad > 0 {
+                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(l_pad))));
+                    }
 
                     let empty_line = Vec::new();
-                    let line = rendered_cells[col_idx].get(line_idx).unwrap_or(&empty_line);
-                    let line_len = Segment::get_line_length(line);
+                    let raw_line = rendered_cells[col_idx].get(line_idx).unwrap_or(&empty_line);
+                    let mut adjusted_line =
+                        Segment::adjust_line_length(raw_line.clone(), inner_w, None, false);
+
+                    if let Some(ref col_style) = col.style {
+                        for seg in &mut adjusted_line {
+                            if seg.style.is_none() {
+                                seg.style = Some(col_style.clone());
+                            }
+                        }
+                    }
+
+                    let line_len = Segment::get_line_length(&adjusted_line);
 
                     let (align_left, align_right) = if line_len < inner_w {
                         let diff = inner_w - line_len;
@@ -587,15 +699,26 @@ impl Renderable for Table {
                         (0, 0)
                     };
 
+                    let pad_style = col.style.clone();
                     if align_left > 0 {
-                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(align_left))));
+                        sink.push(Segment {
+                            text: Cow::Owned(" ".repeat(align_left)),
+                            style: pad_style.clone(),
+                            control: None,
+                        });
                     }
-                    sink.extend(line.clone());
+                    sink.extend(adjusted_line);
                     if align_right > 0 {
-                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(align_right))));
+                        sink.push(Segment {
+                            text: Cow::Owned(" ".repeat(align_right)),
+                            style: pad_style,
+                            control: None,
+                        });
                     }
 
-                    sink.push(Segment::unstyled(Cow::Owned(right_pad)));
+                    if r_pad > 0 {
+                        sink.push(Segment::unstyled(Cow::Owned(" ".repeat(r_pad))));
+                    }
 
                     if let Some(b) = border_box
                         && col_idx + 1 < self.columns.len()
@@ -644,6 +767,7 @@ impl Renderable for Table {
                 style: border_style,
                 control: None,
             });
+            sink.push(Segment::line());
         }
     }
 
@@ -663,6 +787,7 @@ impl Renderable for Table {
 mod tests {
     use super::*;
     use crate::box_styles::ASCII;
+    use crate::cell_len;
     use crate::color::ColorSystem;
 
     #[test]
@@ -685,5 +810,87 @@ mod tests {
         assert_eq!(lines[3], "| Alice |  24 |");
         assert_eq!(lines[4], "| Bob   |  30 |");
         assert_eq!(lines[5], "+-------------+");
+    }
+
+    #[test]
+    fn test_table_narrow_window_collapse() {
+        for width in [80, 60, 40] {
+            let console =
+                Console::with_dimensions(width, 25).with_color_system(ColorSystem::NoColor);
+            let mut table = Table::new().box_style(ROUNDED);
+            table.add_column(Column::new().header("Hook").no_wrap(true));
+            table.add_column(Column::new().header("Status").no_wrap(true));
+            table.add_column(
+                Column::new()
+                    .header("Freed")
+                    .justify(JustifyMethod::Right)
+                    .no_wrap(true),
+            );
+            table.add_column(Column::new().header("Detail"));
+            table.add_row([
+                "uv cache prune",
+                "would_run",
+                "-",
+                "current cache size 9.17 GiB; will prune dangling entries only",
+            ]);
+            table.add_row([
+                "journalctl --user vacuum",
+                "would_run",
+                "-",
+                "Archived and active journals take up 144.5M in the file system.",
+            ]);
+
+            let out = console.capture(|c| {
+                c.print(table);
+            });
+
+            for line in out.lines() {
+                let len = cell_len(line);
+                assert!(
+                    len <= width,
+                    "Line length {} exceeded console width {} on line: {}",
+                    len,
+                    width,
+                    line
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_table_with_long_paths_no_overflow() {
+        for width in [80, 60, 45] {
+            let console =
+                Console::with_dimensions(width, 25).with_color_system(ColorSystem::NoColor);
+            let mut table = Table::new().box_style(ROUNDED);
+            table.add_column(Column::new().header("Category").no_wrap(true));
+            table.add_column(Column::new().header("Path"));
+            table.add_column(Column::new().header("Reason"));
+            table.add_row([
+                "cache",
+                "/home/koresent/.cache/zen",
+                "app process running (zen/zen-bin/zen-browser)",
+            ]);
+            table.add_row([
+                "cache",
+                "/home/koresent/.cache/vicinae-extensions-src",
+                "app process running (vicinae/npm/node)",
+            ]);
+
+            let out = console.capture(|c| {
+                c.print(table);
+            });
+
+            for line in out.lines() {
+                let len = cell_len(line);
+                assert!(
+                    len <= width,
+                    "Line length {} exceeded console width {} on line: {}",
+                    len,
+                    width,
+                    line
+                );
+            }
+        }
     }
 }
