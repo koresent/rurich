@@ -13,6 +13,7 @@ pub struct Live<T> {
     running: Arc<Mutex<bool>>,
     refresh_rate: Duration,
     transient: bool,
+    use_stderr: bool,
 }
 
 impl<T: Renderable + Send + 'static> Live<T> {
@@ -24,7 +25,13 @@ impl<T: Renderable + Send + 'static> Live<T> {
             running: Arc::new(Mutex::new(false)),
             refresh_rate: Duration::from_millis(100),
             transient: false,
+            use_stderr: false,
         }
+    }
+
+    pub fn stderr(mut self, stderr: bool) -> Self {
+        self.use_stderr = stderr;
+        self
     }
 
     pub fn transient(mut self, transient: bool) -> Self {
@@ -61,13 +68,17 @@ impl<T: Renderable + Send + 'static> Live<T> {
         };
         let mut last = self.last_lines.lock().unwrap();
 
-        let mut stdout = io::stdout().lock();
+        let mut out: Box<dyn Write> = if self.use_stderr {
+            Box::new(io::stderr().lock())
+        } else {
+            Box::new(io::stdout().lock())
+        };
         if *last > 0 {
-            let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", *last);
+            let _ = write!(out, "\r\x1b[{}A\x1b[0J", *last);
         }
 
-        let _ = writeln!(stdout, "{trimmed_out}");
-        let _ = stdout.flush();
+        let _ = writeln!(out, "{trimmed_out}");
+        let _ = out.flush();
         *last = lines_count;
     }
 
@@ -82,22 +93,27 @@ impl<T: Renderable + Send + 'static> Live<T> {
         let last_lines = Arc::clone(&self.last_lines);
         let running_clone = Arc::clone(&self.running);
         let refresh_rate = self.refresh_rate;
+        let use_stderr = self.use_stderr;
         let console = Console::new();
 
-        let mut stdout = io::stdout().lock();
-        let _ = write!(stdout, "{}", ControlCode::HideCursor);
-        let _ = stdout.flush();
-        drop(stdout);
+        let mut out: Box<dyn Write> = if use_stderr {
+            Box::new(io::stderr().lock())
+        } else {
+            Box::new(io::stdout().lock())
+        };
+        let _ = write!(out, "{}", ControlCode::HideCursor);
+        let _ = out.flush();
+        drop(out);
 
         thread::spawn(move || {
             while *running_clone.lock().unwrap() {
                 let r = renderable.lock().unwrap();
-                let out = console.capture(|c| {
+                let out_str = console.capture(|c| {
                     c.print(&*r);
                 });
                 drop(r);
 
-                let trimmed_out = out.trim_end_matches('\n');
+                let trimmed_out = out_str.trim_end_matches('\n');
                 let lines_count = if trimmed_out.is_empty() {
                     0
                 } else {
@@ -105,14 +121,18 @@ impl<T: Renderable + Send + 'static> Live<T> {
                 };
                 let mut last = last_lines.lock().unwrap();
 
-                let mut stdout = io::stdout().lock();
+                let mut out: Box<dyn Write> = if use_stderr {
+                    Box::new(io::stderr().lock())
+                } else {
+                    Box::new(io::stdout().lock())
+                };
                 if *last > 0 {
-                    let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", *last);
+                    let _ = write!(out, "\r\x1b[{}A\x1b[0J", *last);
                 }
-                let _ = writeln!(stdout, "{trimmed_out}");
-                let _ = stdout.flush();
+                let _ = writeln!(out, "{trimmed_out}");
+                let _ = out.flush();
                 *last = lines_count;
-                drop(stdout);
+                drop(out);
                 drop(last);
 
                 thread::sleep(refresh_rate);
@@ -127,15 +147,19 @@ impl<T: Renderable + Send + 'static> Live<T> {
         }
         *running = false;
 
-        let mut stdout = io::stdout().lock();
-        let _ = write!(stdout, "{}", ControlCode::ShowCursor);
+        let mut out: Box<dyn Write> = if self.use_stderr {
+            Box::new(io::stderr().lock())
+        } else {
+            Box::new(io::stdout().lock())
+        };
+        let _ = write!(out, "{}", ControlCode::ShowCursor);
         if self.transient {
             let last = *self.last_lines.lock().unwrap();
             if last > 0 {
-                let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", last);
+                let _ = write!(out, "\r\x1b[{}A\x1b[0J", last);
             }
         }
-        let _ = stdout.flush();
+        let _ = out.flush();
     }
 }
 
@@ -144,9 +168,13 @@ impl<T> Drop for Live<T> {
         let mut running = self.running.lock().unwrap();
         if *running {
             *running = false;
-            let mut stdout = io::stdout().lock();
-            let _ = write!(stdout, "{}", ControlCode::ShowCursor);
-            let _ = stdout.flush();
+            let mut out: Box<dyn Write> = if self.use_stderr {
+                Box::new(io::stderr().lock())
+            } else {
+                Box::new(io::stdout().lock())
+            };
+            let _ = write!(out, "{}", ControlCode::ShowCursor);
+            let _ = out.flush();
         }
     }
 }

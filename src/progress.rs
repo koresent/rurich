@@ -477,6 +477,7 @@ pub struct Progress {
     next_id: Arc<AtomicUsize>,
     live: Arc<Mutex<Option<crate::live::Live<Progress>>>>,
     transient: Arc<AtomicBool>,
+    use_stderr: Arc<AtomicBool>,
 }
 
 impl Default for Progress {
@@ -500,6 +501,7 @@ impl Progress {
             next_id: Arc::new(AtomicUsize::new(1)),
             live: Arc::new(Mutex::new(None)),
             transient: Arc::new(AtomicBool::new(false)),
+            use_stderr: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -510,6 +512,7 @@ impl Progress {
             next_id: Arc::new(AtomicUsize::new(1)),
             live: Arc::new(Mutex::new(None)),
             transient: Arc::new(AtomicBool::new(false)),
+            use_stderr: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -518,12 +521,18 @@ impl Progress {
         self
     }
 
+    pub fn stderr(self, stderr: bool) -> Self {
+        self.use_stderr.store(stderr, Ordering::SeqCst);
+        self
+    }
+
     pub fn start(&self) {
         let mut live_lock = self.live.lock().unwrap();
         if live_lock.is_none() {
             let live = crate::live::Live::new(self.clone())
                 .refresh_rate(std::time::Duration::from_millis(80))
-                .transient(self.transient.load(Ordering::SeqCst));
+                .transient(self.transient.load(Ordering::SeqCst))
+                .stderr(self.use_stderr.load(Ordering::SeqCst));
             live.start();
             *live_lock = Some(live);
         }
@@ -561,6 +570,46 @@ impl Progress {
         if let Some(task) = tasks.iter_mut().find(|t| t.id == id) {
             task.completed = completed;
         }
+    }
+
+    pub fn update_task(
+        &self,
+        id: TaskId,
+        completed: Option<usize>,
+        total: Option<usize>,
+        description: Option<String>,
+    ) {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(task) = tasks.iter_mut().find(|t| t.id == id) {
+            if let Some(c) = completed {
+                task.completed = c;
+            }
+            if let Some(tot) = total {
+                task.total = tot;
+            }
+            if let Some(d) = description {
+                task.description = d;
+            }
+        }
+    }
+
+    pub fn update_description(&self, id: TaskId, description: impl Into<String>) {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(task) = tasks.iter_mut().find(|t| t.id == id) {
+            task.description = description.into();
+        }
+    }
+
+    pub fn update_total(&self, id: TaskId, total: usize) {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(task) = tasks.iter_mut().find(|t| t.id == id) {
+            task.total = total;
+        }
+    }
+
+    pub fn reset_tasks(&self) {
+        let mut tasks = self.tasks.lock().unwrap();
+        tasks.clear();
     }
 
     pub fn advance(&self, id: TaskId, step: usize) {
