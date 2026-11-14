@@ -6,6 +6,58 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+fn lock_writer(use_stderr: bool) -> Box<dyn Write> {
+    if use_stderr {
+        Box::new(io::stderr().lock())
+    } else {
+        Box::new(io::stdout().lock())
+    }
+}
+
+fn render_step<T: Renderable>(
+    renderable: &Arc<Mutex<T>>,
+    console: &Console,
+    last_lines: &Arc<Mutex<usize>>,
+    use_stderr: bool,
+) {
+    let r = renderable.lock().unwrap();
+    let out_str = console.capture(|c| {
+        c.print(&*r);
+    });
+    drop(r);
+
+    let trimmed_out = out_str.trim_end_matches('\n');
+    let lines: Vec<&str> = if trimmed_out.is_empty() {
+        Vec::new()
+    } else {
+        trimmed_out.lines().collect()
+    };
+    let lines_count = lines.len();
+
+    let mut last = last_lines.lock().unwrap();
+    let mut out = lock_writer(use_stderr);
+
+    if *last > 0 {
+        let _ = write!(out, "\r\x1b[2K");
+        for _ in 1..*last {
+            let _ = write!(out, "\x1b[1A\x1b[2K");
+        }
+    }
+
+    if lines_count > 0 {
+        for (idx, line) in lines.iter().enumerate() {
+            if idx + 1 < lines_count {
+                let _ = writeln!(out, "{line}");
+            } else {
+                let _ = write!(out, "{line}");
+            }
+        }
+    }
+
+    let _ = out.flush();
+    *last = lines_count;
+}
+
 pub struct Live<T> {
     renderable: Arc<Mutex<T>>,
     console: Console,
@@ -54,32 +106,25 @@ impl<T: Renderable + Send + 'static> Live<T> {
     }
 
     pub fn refresh(&self) {
-        let r = self.renderable.lock().unwrap();
-        let out = self.console.capture(|c| {
-            c.print(&*r);
-        });
-        drop(r);
+        render_step(
+            &self.renderable,
+            &self.console,
+            &self.last_lines,
+            self.use_stderr,
+        );
+    }
 
-        let trimmed_out = out.trim_end_matches('\n');
-        let lines_count = if trimmed_out.is_empty() {
-            0
-        } else {
-            trimmed_out.lines().count()
-        };
+    pub fn clear(&self) {
         let mut last = self.last_lines.lock().unwrap();
-
-        let mut out: Box<dyn Write> = if self.use_stderr {
-            Box::new(io::stderr().lock())
-        } else {
-            Box::new(io::stdout().lock())
-        };
         if *last > 0 {
-            let _ = write!(out, "\r\x1b[{}A\x1b[0J", *last);
+            let mut out = lock_writer(self.use_stderr);
+            let _ = write!(out, "\r\x1b[2K");
+            for _ in 1..*last {
+                let _ = write!(out, "\x1b[1A\x1b[2K");
+            }
+            let _ = out.flush();
+            *last = 0;
         }
-
-        let _ = writeln!(out, "{trimmed_out}");
-        let _ = out.flush();
-        *last = lines_count;
     }
 
     pub fn start(&self) {
@@ -96,45 +141,14 @@ impl<T: Renderable + Send + 'static> Live<T> {
         let use_stderr = self.use_stderr;
         let console = Console::new();
 
-        let mut out: Box<dyn Write> = if use_stderr {
-            Box::new(io::stderr().lock())
-        } else {
-            Box::new(io::stdout().lock())
-        };
+        let mut out = lock_writer(use_stderr);
         let _ = write!(out, "{}", ControlCode::HideCursor);
         let _ = out.flush();
         drop(out);
 
         thread::spawn(move || {
             while *running_clone.lock().unwrap() {
-                let r = renderable.lock().unwrap();
-                let out_str = console.capture(|c| {
-                    c.print(&*r);
-                });
-                drop(r);
-
-                let trimmed_out = out_str.trim_end_matches('\n');
-                let lines_count = if trimmed_out.is_empty() {
-                    0
-                } else {
-                    trimmed_out.lines().count()
-                };
-                let mut last = last_lines.lock().unwrap();
-
-                let mut out: Box<dyn Write> = if use_stderr {
-                    Box::new(io::stderr().lock())
-                } else {
-                    Box::new(io::stdout().lock())
-                };
-                if *last > 0 {
-                    let _ = write!(out, "\r\x1b[{}A\x1b[0J", *last);
-                }
-                let _ = writeln!(out, "{trimmed_out}");
-                let _ = out.flush();
-                *last = lines_count;
-                drop(out);
-                drop(last);
-
+                render_step(&renderable, &console, &last_lines, use_stderr);
                 thread::sleep(refresh_rate);
             }
         });
@@ -147,19 +161,21 @@ impl<T: Renderable + Send + 'static> Live<T> {
         }
         *running = false;
 
-        let mut out: Box<dyn Write> = if self.use_stderr {
-            Box::new(io::stderr().lock())
-        } else {
-            Box::new(io::stdout().lock())
-        };
-        let _ = write!(out, "{}", ControlCode::ShowCursor);
+        let mut out = lock_writer(self.use_stderr);
+        let mut last = self.last_lines.lock().unwrap();
         if self.transient {
-            let last = *self.last_lines.lock().unwrap();
-            if last > 0 {
-                let _ = write!(out, "\r\x1b[{}A\x1b[0J", last);
+            if *last > 0 {
+                let _ = write!(out, "\r\x1b[2K");
+                for _ in 1..*last {
+                    let _ = write!(out, "\x1b[1A\x1b[2K");
+                }
             }
+        } else if *last > 0 {
+            let _ = writeln!(out);
         }
+        let _ = write!(out, "{}", ControlCode::ShowCursor);
         let _ = out.flush();
+        *last = 0;
     }
 }
 
@@ -168,11 +184,7 @@ impl<T> Drop for Live<T> {
         let mut running = self.running.lock().unwrap();
         if *running {
             *running = false;
-            let mut out: Box<dyn Write> = if self.use_stderr {
-                Box::new(io::stderr().lock())
-            } else {
-                Box::new(io::stdout().lock())
-            };
+            let mut out = lock_writer(self.use_stderr);
             let _ = write!(out, "{}", ControlCode::ShowCursor);
             let _ = out.flush();
         }

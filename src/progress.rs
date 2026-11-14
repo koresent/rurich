@@ -552,6 +552,18 @@ impl Progress {
         }
     }
 
+    pub fn clear(&self) {
+        let live_lock = self.live.lock().unwrap();
+        if let Some(ref live) = *live_lock {
+            live.clear();
+        }
+    }
+
+    pub fn remove_task(&self, id: TaskId) {
+        let mut tasks = self.tasks.lock().unwrap();
+        tasks.retain(|t| t.id != id);
+    }
+
     pub fn add_column(&self, column: Box<dyn ProgressColumn>) {
         let mut cols = self.columns.lock().unwrap();
         cols.push(column);
