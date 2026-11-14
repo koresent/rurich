@@ -1,12 +1,13 @@
 use crate::console::Console;
+use crate::markup::render as render_markup;
 use crate::measure::Measurement;
 use crate::protocol::{ConsoleOptions, Renderable};
 use crate::segment::Segment;
-use crate::spinner_bar::{ProgressBar, Spinner};
+use crate::spinner_bar::{ProgressBar, Spinner, SpinnerPreset};
 use crate::style::Style;
 use crate::table::{Column, Table};
 use crate::text::Text;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -53,6 +54,8 @@ pub trait ProgressColumn: Send + Sync {
 
 pub struct SpinnerColumn {
     pub spinner: Spinner,
+    pub finished_text: Option<String>,
+    pub style: Option<Style>,
 }
 
 impl Default for SpinnerColumn {
@@ -64,14 +67,54 @@ impl Default for SpinnerColumn {
 impl SpinnerColumn {
     pub fn new() -> Self {
         Self {
-            spinner: Spinner::new(vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 80),
+            spinner: Spinner::new(vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 80)
+                .style(Style::parse("bold cyan").unwrap_or_default()),
+            finished_text: Some("[bold green]✓[/]".to_string()),
+            style: Some(Style::parse("bold cyan").unwrap_or_default()),
         }
+    }
+
+    pub fn with_preset(preset: SpinnerPreset) -> Self {
+        Self {
+            spinner: Spinner::from_preset(preset).style(Style::parse("bold cyan").unwrap_or_default()),
+            finished_text: Some("[bold green]✓[/]".to_string()),
+            style: Some(Style::parse("bold cyan").unwrap_or_default()),
+        }
+    }
+
+    pub fn with_spinner(spinner: Spinner) -> Self {
+        Self {
+            spinner,
+            finished_text: Some("[bold green]✓[/]".to_string()),
+            style: None,
+        }
+    }
+
+    pub fn style(mut self, style: Style) -> Self {
+        self.style = Some(style);
+        self
+    }
+
+    pub fn finished_text(mut self, text: impl Into<String>) -> Self {
+        self.finished_text = Some(text.into());
+        self
     }
 }
 
 impl ProgressColumn for SpinnerColumn {
-    fn render(&self, _task: &Task) -> Box<dyn Renderable> {
-        Box::new(self.spinner.clone())
+    fn render(&self, task: &Task) -> Box<dyn Renderable> {
+        if task.is_finished() {
+            let text = self.finished_text.as_deref().unwrap_or("✓");
+            let renderable = render_markup(text)
+                .unwrap_or_else(|_| Text::from_plain(text.to_string()));
+            Box::new(renderable)
+        } else {
+            let mut s = self.spinner.clone();
+            if let Some(ref st) = self.style {
+                s.style = Some(st.clone());
+            }
+            Box::new(s)
+        }
     }
 }
 
@@ -79,12 +122,22 @@ pub struct TextColumn;
 
 impl ProgressColumn for TextColumn {
     fn render(&self, task: &Task) -> Box<dyn Renderable> {
-        Box::new(Text::from_plain(task.description.clone()))
+        let text = render_markup(&task.description)
+            .unwrap_or_else(|_| Text::from_plain(task.description.clone()));
+        Box::new(text)
     }
 }
 
 pub struct BarColumn {
     pub width: usize,
+    pub smooth: bool,
+    pub pulse: bool,
+    pub line_mode: bool,
+    pub complete_char: Option<char>,
+    pub remaining_char: Option<char>,
+    pub complete_style: Option<Style>,
+    pub finished_style: Option<Style>,
+    pub remaining_style: Option<Style>,
 }
 
 impl Default for BarColumn {
@@ -95,20 +148,132 @@ impl Default for BarColumn {
 
 impl BarColumn {
     pub fn new(width: usize) -> Self {
-        Self { width }
+        Self {
+            width,
+            smooth: true,
+            pulse: false,
+            line_mode: true,
+            complete_char: None,
+            remaining_char: None,
+            complete_style: Some(Style::parse("color(#f92672)").unwrap_or_default()),
+            finished_style: Some(Style::parse("color(#729c1f)").unwrap_or_default()),
+            remaining_style: Some(Style::parse("color(#3a3a3a)").unwrap_or_default()),
+        }
+    }
+
+    pub fn line(mut self, line: bool) -> Self {
+        self.line_mode = line;
+        self
+    }
+
+    pub fn smooth_blocks(mut self) -> Self {
+        self.line_mode = false;
+        self.smooth = true;
+        self
+    }
+
+    pub fn blocks(mut self) -> Self {
+        self.line_mode = false;
+        self.smooth = false;
+        self
+    }
+
+    pub fn smooth(mut self, smooth: bool) -> Self {
+        self.smooth = smooth;
+        self
+    }
+
+    pub fn pulse(mut self, pulse: bool) -> Self {
+        self.pulse = pulse;
+        self
+    }
+
+    pub fn complete_char(mut self, ch: char) -> Self {
+        self.complete_char = Some(ch);
+        self.line_mode = false;
+        self
+    }
+
+    pub fn remaining_char(mut self, ch: char) -> Self {
+        self.remaining_char = Some(ch);
+        self.line_mode = false;
+        self
+    }
+
+    pub fn complete_style(mut self, style: Style) -> Self {
+        self.complete_style = Some(style);
+        self
+    }
+
+    pub fn finished_style(mut self, style: Style) -> Self {
+        self.finished_style = Some(style);
+        self
+    }
+
+    pub fn remaining_style(mut self, style: Style) -> Self {
+        self.remaining_style = Some(style);
+        self
     }
 }
 
 impl ProgressColumn for BarColumn {
     fn render(&self, task: &Task) -> Box<dyn Renderable> {
-        let mut bar = ProgressBar::new(task.total);
-        bar.width = self.width;
+        let mut bar = ProgressBar::new(task.total)
+            .width(self.width)
+            .smooth(self.smooth)
+            .pulse(self.pulse)
+            .line(self.line_mode);
+
+        if let Some(ch) = self.complete_char {
+            bar = bar.complete_char(ch);
+            bar.line_mode = false;
+        }
+        if let Some(ch) = self.remaining_char {
+            bar = bar.remaining_char(ch);
+            bar.line_mode = false;
+        }
+
         bar.update(task.completed);
-        bar.style = if task.is_finished() {
-            Style::parse("green").unwrap_or_default()
+
+        if task.is_finished() {
+            let finish_st = self
+                .finished_style
+                .clone()
+                .or_else(|| self.complete_style.clone())
+                .unwrap_or_else(|| {
+                    if self.line_mode {
+                        Style::parse("color(#729c1f)").unwrap_or_default()
+                    } else {
+                        Style::parse("bold green").unwrap_or_default()
+                    }
+                });
+            bar = bar.complete_style(finish_st);
         } else {
-            Style::parse("cyan").unwrap_or_default()
-        };
+            let comp_st = self
+                .complete_style
+                .clone()
+                .unwrap_or_else(|| {
+                    if self.line_mode {
+                        Style::parse("color(#f92672)").unwrap_or_default()
+                    } else {
+                        Style::parse("bold cyan").unwrap_or_default()
+                    }
+                });
+            bar = bar.complete_style(comp_st);
+        }
+
+        let rem_st = self
+            .remaining_style
+            .clone()
+            .unwrap_or_else(|| {
+                if self.line_mode {
+                    Style::parse("color(#3a3a3a)").unwrap_or_default()
+                } else {
+                    Style::parse("dim").unwrap_or_default()
+                }
+            });
+        bar = bar.remaining_style(rem_st);
+
         Box::new(bar)
     }
 }
@@ -315,6 +480,8 @@ pub struct Progress {
     tasks: Arc<Mutex<Vec<Task>>>,
     columns: Arc<Mutex<Vec<Box<dyn ProgressColumn>>>>,
     next_id: Arc<AtomicUsize>,
+    live: Arc<Mutex<Option<crate::live::Live<Progress>>>>,
+    transient: Arc<AtomicBool>,
 }
 
 impl Default for Progress {
@@ -336,6 +503,8 @@ impl Progress {
             tasks: Arc::new(Mutex::new(Vec::new())),
             columns: Arc::new(Mutex::new(columns)),
             next_id: Arc::new(AtomicUsize::new(1)),
+            live: Arc::new(Mutex::new(None)),
+            transient: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -344,6 +513,38 @@ impl Progress {
             tasks: Arc::new(Mutex::new(Vec::new())),
             columns: Arc::new(Mutex::new(columns)),
             next_id: Arc::new(AtomicUsize::new(1)),
+            live: Arc::new(Mutex::new(None)),
+            transient: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn transient(self, transient: bool) -> Self {
+        self.transient.store(transient, Ordering::SeqCst);
+        self
+    }
+
+    pub fn start(&self) {
+        let mut live_lock = self.live.lock().unwrap();
+        if live_lock.is_none() {
+            let live = crate::live::Live::new(self.clone())
+                .refresh_rate(std::time::Duration::from_millis(80))
+                .transient(self.transient.load(Ordering::SeqCst));
+            live.start();
+            *live_lock = Some(live);
+        }
+    }
+
+    pub fn stop(&self) {
+        let mut live_lock = self.live.lock().unwrap();
+        if let Some(live) = live_lock.take() {
+            live.stop();
+        }
+    }
+
+    pub fn refresh(&self) {
+        let live_lock = self.live.lock().unwrap();
+        if let Some(ref live) = *live_lock {
+            live.refresh();
         }
     }
 
@@ -434,19 +635,12 @@ pub fn track<I: IntoIterator>(iter: I, description: impl Into<String>) -> TrackI
 
     let progress = Arc::new(Progress::new());
     let task_id = progress.add_task(description, total);
-    let live = Arc::new(Mutex::new(
-        crate::live::Live::new(progress.clone()).auto_refresh(false),
-    ));
-    if let Ok(l) = live.lock() {
-        l.start();
-        l.refresh();
-    }
+    progress.start();
 
     TrackIter {
         iter: into_iter,
         progress,
         task_id,
-        live,
     }
 }
 
@@ -454,7 +648,6 @@ pub struct TrackIter<I> {
     iter: I,
     progress: Arc<Progress>,
     task_id: TaskId,
-    live: Arc<Mutex<crate::live::Live<Arc<Progress>>>>,
 }
 
 impl<I: Iterator> Iterator for TrackIter<I> {
@@ -464,11 +657,9 @@ impl<I: Iterator> Iterator for TrackIter<I> {
         let item = self.iter.next();
         if item.is_some() {
             self.progress.advance(self.task_id, 1);
-            if let Ok(l) = self.live.lock() {
-                l.refresh();
-            }
-        } else if let Ok(l) = self.live.lock() {
-            l.stop();
+            self.progress.refresh();
+        } else {
+            self.progress.stop();
         }
         item
     }
@@ -479,6 +670,12 @@ impl<I: Iterator> Iterator for TrackIter<I> {
 }
 
 impl<I: ExactSizeIterator> ExactSizeIterator for TrackIter<I> {}
+
+impl<I> Drop for TrackIter<I> {
+    fn drop(&mut self) {
+        self.progress.stop();
+    }
+}
 
 #[cfg(test)]
 mod tests {

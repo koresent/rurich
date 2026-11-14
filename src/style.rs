@@ -193,6 +193,10 @@ impl Style {
                             style.attributes.remove(StyleAttributes::UNDERLINE);
                             style.set_attributes.insert(StyleAttributes::UNDERLINE);
                         }
+                        "double_underline" | "double-underline" | "uu" => {
+                            style.attributes.remove(StyleAttributes::DOUBLE_UNDERLINE);
+                            style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                        }
                         "strike" | "s" => {
                             style.attributes.remove(StyleAttributes::STRIKE);
                             style.set_attributes.insert(StyleAttributes::STRIKE);
@@ -227,6 +231,10 @@ impl Style {
                 "underline" | "u" => {
                     style.attributes.insert(StyleAttributes::UNDERLINE);
                     style.set_attributes.insert(StyleAttributes::UNDERLINE);
+                }
+                "double_underline" | "double-underline" | "uu" => {
+                    style.attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                    style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
                 }
                 "strike" | "s" => {
                     style.attributes.insert(StyleAttributes::STRIKE);
@@ -272,11 +280,11 @@ impl Style {
                         RurichError::StyleSyntaxError("Color expected after 'on'".into())
                     })?;
                     let bg_lower = bg_word.to_lowercase();
-                    if let Some(theme_style) = crate::theme::get_theme_style(&bg_lower) {
-                        if let Some(c) = theme_style.color {
-                            style.bgcolor = Some(c);
-                            continue;
-                        }
+                    if let Some(theme_style) = crate::theme::get_theme_style(&bg_lower)
+                        && let Some(c) = theme_style.color
+                    {
+                        style.bgcolor = Some(c);
+                        continue;
                     }
                     let color = Color::parse(bg_word)?;
                     style.bgcolor = Some(color);
@@ -312,6 +320,10 @@ impl Style {
                             style.attributes.remove(StyleAttributes::UNDERLINE);
                             style.set_attributes.insert(StyleAttributes::UNDERLINE);
                         }
+                        "double_underline" | "double-underline" | "uu" => {
+                            style.attributes.remove(StyleAttributes::DOUBLE_UNDERLINE);
+                            style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                        }
                         "strike" | "s" => {
                             style.attributes.remove(StyleAttributes::STRIKE);
                             style.set_attributes.insert(StyleAttributes::STRIKE);
@@ -346,6 +358,10 @@ impl Style {
                 "underline" | "u" => {
                     style.attributes.insert(StyleAttributes::UNDERLINE);
                     style.set_attributes.insert(StyleAttributes::UNDERLINE);
+                }
+                "double_underline" | "double-underline" | "uu" => {
+                    style.attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                    style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
                 }
                 "strike" | "s" => {
                     style.attributes.insert(StyleAttributes::STRIKE);

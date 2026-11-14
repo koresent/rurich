@@ -1,16 +1,17 @@
 # rurich
 
-RuRich is a native Rust library for terminal formatting, styled text, tables, panels, markdown, syntax highlighting, progress displays, and diagnostic reporting. It provides terminal styling capabilities with complete visual parity to Python Rich, without requiring Python or external runtimes.
+RuRich is a native Rust library for terminal formatting, styled text, tables, panels, layout composition, markdown, syntax highlighting, progress displays, interactive micro-TUI widgets, and diagnostic reporting.
 
 ---
 
 ## Features
 
-### Colors and Styles
+### Colors, Styles and Gradients
 - **TrueColor (24-bit RGB)**: Supports hexadecimal (`#ff00aa`) and RGB (`rgb(255, 0, 128)`) color definitions.
 - **8-bit (ANSI 256) and Standard 16 ANSI colors**: Comprehensive palette with over 230 standard named colors.
 - **Terminal capability detection**: Automatic detection and graceful downgrading based on environment variables (`NO_COLOR`, `COLORTERM`, `TERM`).
 - **Text attributes**: `bold`, `dim`, `italic`, `underline`, `double_underline`, `strike`, `reverse`, `blink`, `overline`.
+- **RGB Gradients & Rainbows**: `Text::gradient(from, to)` and `Text::rainbow()` interpolating smooth TrueColor along text.
 - **OSC 8 Hyperlinks**: Clickable hyperlinks in compatible terminal emulators.
 
 ### Inline Markup Engine
@@ -20,40 +21,43 @@ RuRich is a native Rust library for terminal formatting, styled text, tables, pa
   ```
 - Bracket escaping via `\[tag]`.
 
+### Interactive TUI Components
+- **`Choose` & `MultiChoose`**: Interactive selection menus with arrow/Vim key navigation, customizable cursor (`> `), multi-select checkboxes (`[✓]`), and search filtering.
+- **`Filter`**: Interactive fuzzy-finder over any dataset with live keystroke filtering and highlighted matching runes.
+- **`ConfirmDialog`**: Visual button-based confirmation (`[ Yes ]  [ No ]`) with arrow/Tab focus switching.
+- **`Input` & `TextArea`**: Single-line input with placeholder and password masking (`*`), and multi-line editor with line numbers and cursor navigation.
+- **`Pager`**: Interactive scrollable viewport for viewing documents, tables, or markdown with keyboard navigation (`j`/`k`, `PageUp`/`PageDown`).
+- **`FilePicker`**: Interactive directory browser and file selector with directory icons and hierarchy traversal.
+
+### Visual Badges, Breadcrumbs and Callouts
+- **`Badge`**: Status pills with square, rounded, or powerline borders (`Badge::success("PASS")`, `Badge::error("FAIL")`).
+- **`Breadcrumbs`**: Navigation paths with custom chevron or slash separators (`Breadcrumbs::new(vec!["root", "user", "src"])`).
+- **`Callout`**: Styled admonition blocks with left accent bars and icons (`Callout::note`, `Callout::tip`, `Callout::warning`, `Callout::caution`, `Callout::important`).
+
+### Layout, Borders and Composition
+- **`Join`**: Free-form horizontal and vertical block stitching with alignment controls (`join_horizontal`, `join_vertical`).
+- **`Panel`**: Bordered boxes enclosing any renderable widget, supporting external margins (`margin`), per-edge borders (`left_accent`, `horizontal_only`), and aligned titles/subtitles.
+- **13 Box Drawing Sets**: `ROUNDED`, `SQUARE`, `SQUARE_DOUBLE_HEAD`, `ASCII`, `ASCII2`, `HEAVY`, `HEAVY_HEAD`, `DOUBLE`, `DOUBLE_EDGE`, `MINIMAL`, `SIMPLE`, `HORIZONTALS`, `MARKDOWN`.
+- **`Layout`**: Hierarchical split-screen grid engine (rows and columns with ratios and minimum dimensions).
+- **`Group`**: Container combining multiple heterogeneous renderables into a single widget.
+- **`Columns`**: Flow layout arranging items across the terminal width.
+- **`Constrain`, `Padding` & `Align`**: Spacing, alignment, and maximum width constraints.
+
+### Data Visualization, Progress Bars and Animations
+- **`Sparkline`**: High-resolution mini-charts using 8 Unicode block levels (` ▂▃▅▆▇█`) from numeric sequences.
+- **Smooth `ProgressBar`**: Sub-character resolution using 8-level fractional Unicode blocks (`▏` through `█`) for smooth progression.
+- **Pulse Animation**: Shimmer wave for indeterminate progress indicators.
+- **Spinner Catalog**: 20+ presets (`SpinnerPreset::Dots`, `Dots2`, `Line`, `Arc`, `Moon`, `Clock`, `BouncingBar`, `Globe`, etc.) accessible via enum or by name (`Spinner::by_name("moon")`).
+- **`Progress`**: Multi-task progress tracking engine with pluggable columns (`SpinnerColumn`, `TextColumn`, `BarColumn`, `TaskProgressColumn`, `TimeElapsedColumn`, `DownloadColumn`, `TransferSpeedColumn`, `MofNCompleteColumn`).
+- **`track`**: Automatic live progress indicator for any Rust iterator.
+- **`Status`**: Animated spinner indicator with dynamic status text.
+
 ### Tables
 - Automated column width negotiation and constraint solving (`ratio_resolve`, `ratio_reduce`).
 - Column headers, footers, and per-column text alignment (`Left`, `Center`, `Right`, `Full`).
 - Row section dividers via `table.add_section()`.
 - Borderless grid mode via `Table::grid()`.
 - Automatic markup parsing inside string cells.
-
-### Panels and Box Styles
-- Bordered boxes enclosing any renderable widget.
-- Centered, left-, or right-aligned titles and subtitles embedded directly into border lines.
-- 13 standard box drawing sets: `ROUNDED`, `SQUARE`, `SQUARE_DOUBLE_HEAD`, `ASCII`, `ASCII2`, `HEAVY`, `HEAVY_HEAD`, `DOUBLE`, `DOUBLE_EDGE`, `MINIMAL`, `SIMPLE`, `HORIZONTALS`, `MARKDOWN`.
-- Configurable inner padding and border colors.
-
-### Layout and Containers
-- **`Layout`**: Hierarchical split-screen grid engine (rows and columns with ratios and minimum dimensions).
-- **`Group`**: Container to combine multiple heterogeneous renderables into a single renderable widget.
-- **`Columns`**: Flow layout arranging items across the terminal width.
-- **`Constrain`**: Restricts the maximum width of any inner renderable.
-- **`Padding` & `Align`**: Spacing and alignment (horizontal and vertical) controls.
-
-### Dynamic Live Displays and Progress Bars
-- **`Live`**: Flicker-free, in-place re-rendering engine using terminal cursor manipulation (`CarriageReturn`, `CursorUp`, `EraseInLine`).
-- **`Progress`**: Multi-task progress tracking engine with pluggable columns:
-  - `SpinnerColumn`: Animated spinner.
-  - `TextColumn`: Task description.
-  - `BarColumn`: Configurable visual progress bar.
-  - `TaskProgressColumn`: Percentage indicator.
-  - `TimeElapsedColumn` & `TimeRemainingColumn`: Elapsed time and ETA estimation.
-  - `FileSizeColumn` & `TotalFileSizeColumn`: Byte formatters.
-  - `DownloadColumn`: Combined download progress (e.g. `12.5 / 100.0 MB` or `MiB`).
-  - `TransferSpeedColumn`: Transfer rate formatting (e.g. `2.4 MB/s`).
-  - `MofNCompleteColumn`: Step ratios (e.g. `10/100`).
-- **`track`**: Iterator wrapper adding an automatic live progress bar to any Rust iterator.
-- **`Status`**: Spinner indicator with dynamic status text.
 
 ### Content Renderers
 - **`Tree`**: Hierarchical tree views with configurable branch guides (`DEFAULT_GUIDES`, `ASCII_GUIDES`, `BOLD_GUIDES`, `DOUBLE_GUIDES`).
@@ -64,7 +68,6 @@ RuRich is a native Rust library for terminal formatting, styled text, tables, pa
 
 ### Diagnostic & CLI Utilities
 - **`Traceback`**: Stack trace formatter with source code context snippets, stack frame boxes, and panic hook installation (`Traceback::install()`).
-- **`Prompt` & `Confirm`**: Interactive terminal prompts supporting default values, choices, and input validation.
 - **`export_html` & `export_svg`**: Direct console export to standalone HTML or vector SVG terminal window images.
 - **`AnsiDecoder`**: Translates raw terminal output containing ANSI escape sequences into styled `Text`.
 - **`ConsoleLayer` / `RuRichLayer`**: `tracing-subscriber` layer formatting events with level badges, timestamps, and target locations.
@@ -84,7 +87,48 @@ fn main() {
 }
 ```
 
-### 2. Table
+### 2. Interactive Selection (`Choose`)
+
+```rust
+use rurich::interactive::Choose;
+
+fn main() {
+    let mut choose = Choose::new(vec!["Option A", "Option B", "Option C"])
+        .header("Select target environment:");
+    if let Ok(Some(selected)) = choose.run() {
+        println!("Selected: {:?}", selected);
+    }
+}
+```
+
+### 3. Visual Callouts and Badges
+
+```rust
+use rurich::prelude::*;
+
+fn main() {
+    let badge = Badge::success("ACTIVE");
+    let callout = Callout::tip("Use --release for optimized compilation performance.");
+
+    get_console().println(badge);
+    get_console().println(callout);
+}
+```
+
+### 4. Sparkline Mini-Charts
+
+```rust
+use rurich::prelude::*;
+
+fn main() {
+    let sparkline = Sparkline::new(vec![1.0, 3.5, 2.0, 7.5, 9.0, 4.0, 8.5])
+        .style(Style::parse("bold cyan").unwrap());
+
+    get_console().println(sparkline);
+}
+```
+
+### 5. Table with Alignment
 
 ```rust
 use rurich::prelude::*;
@@ -103,7 +147,7 @@ fn main() {
 }
 ```
 
-### 3. Bordered Panel
+### 6. Bordered Panel with Custom Sides and Margins
 
 ```rust
 use rurich::prelude::*;
@@ -112,30 +156,14 @@ fn main() {
     let panel = Panel::from_markup("[bold white]Node cluster synchronized.[/]\nAll 16 nodes healthy.")
         .box_style(ROUNDED)
         .title("[bold green] Cluster Status [/]")
-        .subtitle("[dim] Region: us-east-1 [/]")
+        .margin(1, 2)
         .padding(1, 2);
 
     get_console().println(panel);
 }
 ```
 
-### 4. Hierarchical Tree
-
-```rust
-use rurich::prelude::*;
-
-fn main() {
-    let mut tree = Tree::from_markup("[bold green]Project[/]");
-    let src = tree.add_markup("[bold yellow]src/[/]");
-    src.add_markup("[cyan]lib.rs[/]");
-    src.add_markup("[cyan]main.rs[/]");
-    tree.add_markup("[dim]Cargo.toml[/]");
-
-    get_console().println(tree);
-}
-```
-
-### 5. Progress Tracking via Iterator
+### 7. Progress Tracking via Iterator
 
 ```rust
 use rurich::prelude::*;
@@ -151,59 +179,20 @@ fn main() {
 }
 ```
 
-### 6. Interactive Prompt
-
-```rust
-use rurich::prompt::{Confirm, Prompt};
-
-fn main() {
-    let username: String = Prompt::new("Username")
-        .default("admin".to_string())
-        .ask()
-        .unwrap();
-
-    let proceed: bool = Confirm::new("Deploy changes?")
-        .default(false)
-        .ask()
-        .unwrap();
-
-    println!("User: {}, Proceed: {}", username, proceed);
-}
-```
-
-### 7. Exporting to SVG and HTML
-
-```rust
-use rurich::prelude::*;
-
-fn main() {
-    let console = Console::new();
-    let panel = Panel::from_markup("[green]Success![/] All checks passed.")
-        .title("Build Report");
-
-    let html_content = console.export_html(&panel);
-    let svg_content = console.export_svg(&panel, "Build Output");
-
-    std::fs::write("output.html", html_content).unwrap();
-    std::fs::write("output.svg", svg_content).unwrap();
-}
-```
-
 ---
 
-## Running Examples & Tests
+## Complete Feature Showcase
 
-Run the demo showcase:
+Run the all-in-one demonstration covering all library features:
+
 ```bash
 cargo run --all-features --example demo
 ```
 
-Run the multi-task progress demo:
-```bash
-cargo run --example progress_demo
-```
+---
 
-Run the automated test suite:
+## Running Tests
+
 ```bash
 cargo test --all-features
 ```

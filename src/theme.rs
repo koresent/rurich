@@ -6,10 +6,10 @@ use std::sync::{LazyLock, RwLock};
 static GLOBAL_THEME: LazyLock<RwLock<Theme>> = LazyLock::new(|| RwLock::new(Theme::default()));
 
 pub fn get_theme_style(name: &str) -> Option<Style> {
-    if let Ok(theme) = GLOBAL_THEME.read() {
-        if let Some(s) = theme.get(name) {
-            return Some(s);
-        }
+    if let Ok(theme) = GLOBAL_THEME.read()
+        && let Some(s) = theme.get(name)
+    {
+        return Some(s);
     }
     DEFAULT_STYLES.get(name).cloned()
 }

@@ -160,16 +160,16 @@ impl Color {
             )));
         }
 
-        // color(n) format
+        // color(n), color(#hex), color(rgb(...)) format
         if let Some(color_inner) = trimmed
             .strip_prefix("color(")
             .and_then(|s| s.strip_suffix(')'))
         {
-            let n: u8 = color_inner
-                .trim()
-                .parse()
-                .map_err(|_| RurichError::ColorParseError(s.into()))?;
-            return Ok(Self::from_ansi(n));
+            let inner = color_inner.trim();
+            if let Ok(n) = inner.parse::<u8>() {
+                return Ok(Self::from_ansi(n));
+            }
+            return Self::parse(inner);
         }
 
         // Check ANSI color names

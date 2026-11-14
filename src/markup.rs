@@ -25,6 +25,8 @@ impl Tag {
         let style_def = if let Some(ref params) = self.parameters {
             if self.name == "link" {
                 format!("link {params}")
+            } else if self.name == "color" {
+                params.clone()
             } else {
                 format!("{} {params}", self.name)
             }
@@ -107,9 +109,18 @@ pub fn render(markup: &str) -> Result<Text, RurichError> {
             continue;
         }
 
-        // Parse tag and optional parameter (e.g. "link=https://...")
+        // Parse tag and optional parameter (e.g. "link=https://...", "link(https://...)", or "color(#ff00aa)")
         let (tag_name, tag_param) = if let Some((name, param)) = tag_inner.split_once('=') {
             (name.trim(), Some(param.trim().to_string()))
+        } else if let Some((name, param)) = tag_inner.strip_suffix(')').and_then(|s| s.split_once('(')) {
+            let n = name.trim();
+            if n == "link" {
+                ("link", Some(param.trim().to_string()))
+            } else if n == "color" {
+                ("color", Some(param.trim().to_string()))
+            } else {
+                (tag_inner.trim(), None)
+            }
         } else {
             (tag_inner.trim(), None)
         };

@@ -51,26 +51,24 @@ impl<T: Renderable + Send + 'static> Live<T> {
         let out = self.console.capture(|c| {
             c.print(&*r);
         });
+        drop(r);
 
-        let lines: Vec<&str> = out.lines().collect();
+        let trimmed_out = out.trim_end_matches('\n');
+        let lines_count = if trimmed_out.is_empty() {
+            0
+        } else {
+            trimmed_out.lines().count()
+        };
         let mut last = self.last_lines.lock().unwrap();
 
         let mut stdout = io::stdout().lock();
         if *last > 0 {
-            let _ = write!(stdout, "{}", ControlCode::CarriageReturn);
-            for _ in 0..*last {
-                let _ = write!(
-                    stdout,
-                    "{}{}",
-                    ControlCode::CursorUp(1),
-                    ControlCode::EraseInLine(2)
-                );
-            }
+            let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", *last);
         }
 
-        let _ = writeln!(stdout, "{out}");
+        let _ = writeln!(stdout, "{trimmed_out}");
         let _ = stdout.flush();
-        *last = lines.len();
+        *last = lines_count;
     }
 
     pub fn start(&self) {
@@ -99,24 +97,23 @@ impl<T: Renderable + Send + 'static> Live<T> {
                 });
                 drop(r);
 
-                let lines: Vec<&str> = out.lines().collect();
+                let trimmed_out = out.trim_end_matches('\n');
+                let lines_count = if trimmed_out.is_empty() {
+                    0
+                } else {
+                    trimmed_out.lines().count()
+                };
                 let mut last = last_lines.lock().unwrap();
 
                 let mut stdout = io::stdout().lock();
                 if *last > 0 {
-                    let _ = write!(stdout, "{}", ControlCode::CarriageReturn);
-                    for _ in 0..*last {
-                        let _ = write!(
-                            stdout,
-                            "{}{}",
-                            ControlCode::CursorUp(1),
-                            ControlCode::EraseInLine(2)
-                        );
-                    }
+                    let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", *last);
                 }
-                let _ = writeln!(stdout, "{out}");
+                let _ = writeln!(stdout, "{trimmed_out}");
                 let _ = stdout.flush();
-                *last = lines.len();
+                *last = lines_count;
+                drop(stdout);
+                drop(last);
 
                 thread::sleep(refresh_rate);
             }
@@ -135,15 +132,7 @@ impl<T: Renderable + Send + 'static> Live<T> {
         if self.transient {
             let last = *self.last_lines.lock().unwrap();
             if last > 0 {
-                let _ = write!(stdout, "{}", ControlCode::CarriageReturn);
-                for _ in 0..last {
-                    let _ = write!(
-                        stdout,
-                        "{}{}",
-                        ControlCode::CursorUp(1),
-                        ControlCode::EraseInLine(2)
-                    );
-                }
+                let _ = write!(stdout, "\r\x1b[{}A\x1b[0J", last);
             }
         }
         let _ = stdout.flush();

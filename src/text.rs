@@ -1,4 +1,5 @@
 use crate::cells::{cell_len, split_cells};
+use crate::color::Color;
 use crate::console::Console;
 use crate::measure::Measurement;
 use crate::protocol::{ConsoleOptions, JustifyMethod, OverflowMethod, Renderable};
@@ -6,6 +7,25 @@ use crate::segment::Segment;
 use crate::style::Style;
 use std::borrow::Cow;
 use std::fmt;
+
+fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
+    let c = v * s;
+    let x = c * (1.0 - (((h / 60.0) % 2.0) - 1.0).abs());
+    let m = v - c;
+    let (r1, g1, b1) = match (h / 60.0) as usize {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+    (
+        ((r1 + m) * 255.0).round() as u8,
+        ((g1 + m) * 255.0).round() as u8,
+        ((b1 + m) * 255.0).round() as u8,
+    )
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
@@ -54,6 +74,64 @@ impl Text {
             justify: None,
             overflow: None,
             no_wrap: false,
+        }
+    }
+
+    pub fn from_gradient(plain: impl Into<String>, from: Color, to: Color) -> Self {
+        let mut t = Self::from_plain(plain);
+        t.gradient(from, to);
+        t
+    }
+
+    pub fn from_rainbow(plain: impl Into<String>) -> Self {
+        let mut t = Self::from_plain(plain);
+        t.rainbow();
+        t
+    }
+
+    pub fn gradient(&mut self, from: Color, to: Color) {
+        self.spans.clear();
+        let char_indices: Vec<(usize, char)> = self.plain.char_indices().collect();
+        let n = char_indices.len();
+        if n == 0 {
+            return;
+        }
+        let from_rgb = from.get_truecolor();
+        let to_rgb = to.get_truecolor();
+        for (i, &(byte_offset, ch)) in char_indices.iter().enumerate() {
+            let t = if n > 1 {
+                i as f64 / (n - 1) as f64
+            } else {
+                0.0
+            };
+            let r = (from_rgb.0 as f64 + (to_rgb.0 as f64 - from_rgb.0 as f64) * t).round() as u8;
+            let g = (from_rgb.1 as f64 + (to_rgb.1 as f64 - from_rgb.1 as f64) * t).round() as u8;
+            let b = (from_rgb.2 as f64 + (to_rgb.2 as f64 - from_rgb.2 as f64) * t).round() as u8;
+            let char_len = ch.len_utf8();
+            self.spans.push(Span::new(
+                byte_offset,
+                byte_offset + char_len,
+                Style::new().color(Color::from_rgb(r, g, b)),
+            ));
+        }
+    }
+
+    pub fn rainbow(&mut self) {
+        self.spans.clear();
+        let char_indices: Vec<(usize, char)> = self.plain.char_indices().collect();
+        let n = char_indices.len();
+        if n == 0 {
+            return;
+        }
+        for (i, &(byte_offset, ch)) in char_indices.iter().enumerate() {
+            let h = (i as f64 / n as f64) * 360.0;
+            let (r, g, b) = hsv_to_rgb(h, 0.9, 1.0);
+            let char_len = ch.len_utf8();
+            self.spans.push(Span::new(
+                byte_offset,
+                byte_offset + char_len,
+                Style::new().color(Color::from_rgb(r, g, b)),
+            ));
         }
     }
 
@@ -451,6 +529,27 @@ mod tests {
         assert!(lines.len() >= 3);
         for line in lines {
             assert!(line.cell_len() <= 15);
+        }
+    }
+
+    #[test]
+    fn test_text_gradient() {
+        let mut t = Text::from_plain("ABC");
+        t.gradient(Color::from_rgb(255, 0, 0), Color::from_rgb(0, 0, 255));
+        let segs = t.render_to_segments();
+        assert_eq!(segs.len(), 3);
+        assert_eq!(segs[0].style.as_ref().unwrap().color.unwrap(), Color::from_rgb(255, 0, 0));
+        assert_eq!(segs[2].style.as_ref().unwrap().color.unwrap(), Color::from_rgb(0, 0, 255));
+    }
+
+    #[test]
+    fn test_text_rainbow() {
+        let mut t = Text::from_plain("RAINBOW");
+        t.rainbow();
+        let segs = t.render_to_segments();
+        assert_eq!(segs.len(), 7);
+        for seg in segs {
+            assert!(seg.style.is_some());
         }
     }
 }
