@@ -41,11 +41,16 @@ fn main() {
 
     // 2. Inline Markup Engine & Styles
     console.rule(Some("1. Inline BBCode Markup & Styles"));
-    rprintln!("[bold]Attributes:[/] [bold]bold[/], [dim]dim[/], [italic]italic[/], [underline]underline[/], [double_underline]double[/], [strike]strike[/], [reverse]reverse[/]");
-    rprintln!("[bold]TrueColor RGB:[/] [#ff5500]Hex colors[/], [rgb(0,200,255)]RGB triplets[/], [bold white on blue] Backgrounds [/]");
+    rprintln!(
+        "[bold]Attributes:[/] [bold]bold[/], [dim]dim[/], [italic]italic[/], [underline]underline[/], [double_underline]double[/], [strike]strike[/], [reverse]reverse[/]"
+    );
+    rprintln!(
+        "[bold]TrueColor RGB:[/] [#ff5500]Hex colors[/], [rgb(0,200,255)]RGB triplets[/], [bold white on blue] Backgrounds [/]"
+    );
     rprintln!("[bold]OSC 8 Hyperlinks:[/] [link=https://github.com]Clickable Link[/]");
 
-    let mut grad_sample = Text::from_plain("Smooth gradient text interpolation across TrueColor spectrum");
+    let mut grad_sample =
+        Text::from_plain("Smooth gradient text interpolation across TrueColor spectrum");
     grad_sample.gradient(Color::from_rgb(255, 50, 100), Color::from_rgb(50, 200, 255));
     console.println(grad_sample);
     rprintln!();
@@ -56,14 +61,40 @@ fn main() {
         .box_style(ROUNDED)
         .title("[bold cyan]Microservices Cluster Metrics[/]");
     table.add_column(Column::new().header("Service").style(Style::new().bold()));
-    table.add_column(Column::new().header("Status").justify(JustifyMethod::Center));
+    table.add_column(
+        Column::new()
+            .header("Status")
+            .justify(JustifyMethod::Center),
+    );
     table.add_column(Column::new().header("CPU %").justify(JustifyMethod::Right));
     table.add_column(Column::new().header("Memory").justify(JustifyMethod::Right));
-    table.add_column(Column::new().header("Latency").justify(JustifyMethod::Right));
+    table.add_column(
+        Column::new()
+            .header("Latency")
+            .justify(JustifyMethod::Right),
+    );
 
-    table.add_row(["auth-api", "[bold green]ONLINE[/]", "14.2%", "340 MB", "12ms"]);
-    table.add_row(["db-primary", "[bold green]ONLINE[/]", "48.7%", "2.4 GB", "2ms"]);
-    table.add_row(["cache-redis", "[bold yellow]DEGRADED[/]", "88.1%", "6.1 GB", "45ms"]);
+    table.add_row([
+        "auth-api",
+        "[bold green]ONLINE[/]",
+        "14.2%",
+        "340 MB",
+        "12ms",
+    ]);
+    table.add_row([
+        "db-primary",
+        "[bold green]ONLINE[/]",
+        "48.7%",
+        "2.4 GB",
+        "2ms",
+    ]);
+    table.add_row([
+        "cache-redis",
+        "[bold yellow]DEGRADED[/]",
+        "88.1%",
+        "6.1 GB",
+        "45ms",
+    ]);
     table.add_row(["indexer-01", "[bold red]OFFLINE[/]", "0.0%", "0 MB", "—"]);
     console.println(table);
     rprintln!();
@@ -83,11 +114,13 @@ fn main() {
     console.println(panel);
 
     // Left accent quote panel
-    let quote = Panel::from_markup("[italic cyan]\"Pure native Rust terminal formatting with complete layout controls.\"[/]")
-        .box_style(HEAVY)
-        .left_accent()
-        .border_style(Style::parse("bold cyan").unwrap())
-        .padding(0, 1);
+    let quote = Panel::from_markup(
+        "[italic cyan]\"Pure native Rust terminal formatting with complete layout controls.\"[/]",
+    )
+    .box_style(HEAVY)
+    .left_accent()
+    .border_style(Style::parse("bold cyan").unwrap())
+    .padding(0, 1);
     console.println(quote);
     rprintln!();
 
@@ -171,7 +204,8 @@ Supports **bold**, *italics*, and `inline code`.
     #[cfg(feature = "json")]
     {
         console.rule(Some("10. Formatted & Highlighted JSON"));
-        let sample_json = r#"{"service": "rurich", "version": "0.1.0", "active": true, "nodes": 16}"#;
+        let sample_json =
+            r#"{"service": "rurich", "version": "0.1.0", "active": true, "nodes": 16}"#;
         if let Ok(json) = Json::from_str(sample_json) {
             console.println(json);
         }
@@ -216,8 +250,16 @@ Supports **bold**, *italics*, and `inline code`.
         lineno: 88,
         function: "connect_with_retry".to_string(),
         code_context: Some(vec![
-            (87, "let pool = create_pool(&config).await?;".to_string(), false),
-            (88, "pool.acquire().await.expect(\"Connection timeout\");".to_string(), true),
+            (
+                87,
+                "let pool = create_pool(&config).await?;".to_string(),
+                false,
+            ),
+            (
+                88,
+                "pool.acquire().await.expect(\"Connection timeout\");".to_string(),
+                true,
+            ),
             (89, "Ok(pool)".to_string(), false),
         ]),
     });
@@ -225,56 +267,76 @@ Supports **bold**, *italics*, and `inline code`.
     rprintln!();
 
     // 14. Live Progress Bar Styles, Glyphs & Variations Gallery
-    console.rule(Some("14. Live Progress Bar Styles, Glyphs & Variations Gallery"));
+    console.rule(Some(
+        "14. Live Progress Bar Styles, Glyphs & Variations Gallery",
+    ));
     let is_tty = std::io::stdin().is_terminal();
 
     let mut pb_line = ProgressBar::new(100).as_line().width(34);
-    let mut pb_smooth = ProgressBar::new(100).smooth(true).width(34)
+    let mut pb_smooth = ProgressBar::new(100)
+        .smooth(true)
+        .width(34)
         .complete_style(Style::parse("bold cyan").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_emerald = ProgressBar::new(100).smooth(true).width(34)
+    let mut pb_emerald = ProgressBar::new(100)
+        .smooth(true)
+        .width(34)
         .complete_style(Style::parse("bold green").unwrap())
         .remaining_style(Style::parse("dim green").unwrap());
-    let mut pb_discrete = ProgressBar::new(100).smooth(false).width(34)
+    let mut pb_discrete = ProgressBar::new(100)
+        .smooth(false)
+        .width(34)
         .complete_style(Style::parse("bold bright_blue").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_squares = ProgressBar::new(100).width(34)
+    let mut pb_squares = ProgressBar::new(100)
+        .width(34)
         .complete_char('■')
         .remaining_char('□')
         .complete_style(Style::parse("bold magenta").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_circles = ProgressBar::new(100).width(34)
+    let mut pb_circles = ProgressBar::new(100)
+        .width(34)
         .complete_char('●')
         .remaining_char('○')
         .complete_style(Style::parse("bold bright_cyan").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_stars = ProgressBar::new(100).width(34)
+    let mut pb_stars = ProgressBar::new(100)
+        .width(34)
         .complete_char('★')
         .remaining_char('☆')
         .complete_style(Style::parse("bold yellow").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_ascii = ProgressBar::new(100).width(34)
+    let mut pb_ascii = ProgressBar::new(100)
+        .width(34)
         .complete_char('=')
         .remaining_char('-')
         .complete_style(Style::parse("bold yellow").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_hashes = ProgressBar::new(100).width(34)
+    let mut pb_hashes = ProgressBar::new(100)
+        .width(34)
         .complete_char('#')
         .remaining_char('.')
         .complete_style(Style::parse("bold bright_red").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_matrix = ProgressBar::new(100).width(34)
+    let mut pb_matrix = ProgressBar::new(100)
+        .width(34)
         .complete_char('/')
         .remaining_char('░')
         .complete_style(Style::parse("bold green").unwrap())
         .remaining_style(Style::parse("dim green").unwrap());
-    let mut pb_compact = ProgressBar::new(100).smooth(true).width(14)
+    let mut pb_compact = ProgressBar::new(100)
+        .smooth(true)
+        .width(14)
         .complete_style(Style::parse("bold white on red").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let mut pb_wide = ProgressBar::new(100).smooth(true).width(44)
+    let mut pb_wide = ProgressBar::new(100)
+        .smooth(true)
+        .width(44)
         .complete_style(Style::parse("bold bright_magenta").unwrap())
         .remaining_style(Style::parse("dim").unwrap());
-    let pb_pulse = ProgressBar::new(100).pulse(true).width(34)
+    let pb_pulse = ProgressBar::new(100)
+        .pulse(true)
+        .width(34)
         .pulse_style(Style::parse("color(#f92672)").unwrap());
     let async_spinner = Spinner::from_preset(SpinnerPreset::Dots);
 
@@ -291,7 +353,8 @@ Supports **bold**, *italics*, and `inline code`.
                            pb_compact: &ProgressBar,
                            pb_wide: &ProgressBar,
                            pb_pulse: &ProgressBar,
-                           async_spinner: &Spinner| -> String {
+                           async_spinner: &Spinner|
+     -> String {
         let frame_console = Console::new();
         frame_console.capture(|c| {
             c.print_markup("  [bold]Signature Thin Line:[/]        ");
@@ -453,13 +516,25 @@ Supports **bold**, *italics*, and `inline code`.
         ("pulse", Spinner::from_preset(SpinnerPreset::Pulse)),
         ("points", Spinner::from_preset(SpinnerPreset::Points)),
         ("jump", Spinner::from_preset(SpinnerPreset::Jump)),
-        ("bouncing_bar", Spinner::from_preset(SpinnerPreset::BouncingBar)),
-        ("grow_vertical", Spinner::from_preset(SpinnerPreset::GrowVertical)),
+        (
+            "bouncing_bar",
+            Spinner::from_preset(SpinnerPreset::BouncingBar),
+        ),
+        (
+            "grow_vertical",
+            Spinner::from_preset(SpinnerPreset::GrowVertical),
+        ),
         ("hamburger", Spinner::from_preset(SpinnerPreset::Hamburger)),
         ("arrow", Spinner::from_preset(SpinnerPreset::Arrow)),
         ("monkey", Spinner::from_preset(SpinnerPreset::Monkey)),
-        ("square_corners", Spinner::from_preset(SpinnerPreset::SquareCorners)),
-        ("circle_halves", Spinner::from_preset(SpinnerPreset::CircleHalves)),
+        (
+            "square_corners",
+            Spinner::from_preset(SpinnerPreset::SquareCorners),
+        ),
+        (
+            "circle_halves",
+            Spinner::from_preset(SpinnerPreset::CircleHalves),
+        ),
         ("triangle", Spinner::from_preset(SpinnerPreset::Triangle)),
     ];
 
@@ -517,7 +592,9 @@ Supports **bold**, *italics*, and `inline code`.
     rprintln!();
 
     // 16. Dynamic Multi-Task Background Progress
-    console.rule(Some("16. Multi-Task Background Progress Engine (`Progress::start`)"));
+    console.rule(Some(
+        "16. Multi-Task Background Progress Engine (`Progress::start`)",
+    ));
     let batch_progress = Progress::new();
     let task_core = batch_progress.add_task("[bold cyan]Downloading binary package[/]", 100);
     let task_compile = batch_progress.add_task("[bold yellow]Compiling crate modules[/]", 100);
@@ -551,12 +628,16 @@ Supports **bold**, *italics*, and `inline code`.
     // 18. Interactive Micro-TUI Playground
     console.rule(Some("18. Live Interactive TUI Playground"));
     if std::io::stdin().is_terminal() {
-        let mut confirm = ConfirmDialog::new("Would you like to test the interactive TUI components live in this terminal?")
-            .yes_label("Yes, launch TUI")
-            .no_label("Skip");
+        let mut confirm = ConfirmDialog::new(
+            "Would you like to test the interactive TUI components live in this terminal?",
+        )
+        .yes_label("Yes, launch TUI")
+        .no_label("Skip");
 
         if let Ok(Some(true)) = confirm.run() {
-            rprintln!("\n[bold cyan]1. Single-Selection Menu (Choose):[/] (Use Up/Down arrows or j/k, Enter to select)");
+            rprintln!(
+                "\n[bold cyan]1. Single-Selection Menu (Choose):[/] (Use Up/Down arrows or j/k, Enter to select)"
+            );
             let mut choose = Choose::new(vec![
                 "Production Cluster (eu-central-1)",
                 "Staging Environment (us-east-1)",
@@ -568,7 +649,9 @@ Supports **bold**, *italics*, and `inline code`.
                 rprintln!("[bold green]Selected:[/] {}\n", choice[0]);
             }
 
-            rprintln!("[bold cyan]2. Multi-Selection Checkboxes (MultiChoose):[/] (Use Space to toggle, Enter to confirm)");
+            rprintln!(
+                "[bold cyan]2. Multi-Selection Checkboxes (MultiChoose):[/] (Use Space to toggle, Enter to confirm)"
+            );
             let mut multi = MultiChoose::new(vec![
                 "TLS 1.3 / HTTPS Encryption",
                 "Prometheus Metrics Exporter",
@@ -582,7 +665,9 @@ Supports **bold**, *italics*, and `inline code`.
                 rprintln!("[bold green]Enabled features:[/] {:?}\n", features);
             }
 
-            rprintln!("[bold cyan]3. Live Fuzzy Finder (Filter):[/] (Type letters to filter with real-time highlighting)");
+            rprintln!(
+                "[bold cyan]3. Live Fuzzy Finder (Filter):[/] (Type letters to filter with real-time highlighting)"
+            );
             let mut filter = Filter::new(vec![
                 "auth-service",
                 "billing-gateway",
@@ -598,7 +683,9 @@ Supports **bold**, *italics*, and `inline code`.
                 rprintln!("[bold green]Found service:[/] {}\n", selected_service);
             }
 
-            rprintln!("[bold cyan]4. Interactive Text Input (Input):[/] (Type with live cursor, Enter to submit)");
+            rprintln!(
+                "[bold cyan]4. Interactive Text Input (Input):[/] (Type with live cursor, Enter to submit)"
+            );
             let mut input = Input::new()
                 .prompt("Enter deployment release tag: ")
                 .placeholder("e.g. v3.1.0");
@@ -611,7 +698,9 @@ Supports **bold**, *italics*, and `inline code`.
             rprintln!("[dim]Interactive TUI demo skipped.[/]");
         }
     } else {
-        rprintln!("[dim]Running in non-interactive environment. Interactive TUI widgets (Choose, Filter, ConfirmDialog, Input, TextArea, Pager, FilePicker) can be run in a real TTY terminal.[/]");
+        rprintln!(
+            "[dim]Running in non-interactive environment. Interactive TUI widgets (Choose, Filter, ConfirmDialog, Input, TextArea, Pager, FilePicker) can be run in a real TTY terminal.[/]"
+        );
     }
 
     rprintln!();

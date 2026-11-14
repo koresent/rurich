@@ -376,11 +376,7 @@ impl Table {
     }
 }
 
-fn collapse_widths(
-    mut widths: Vec<usize>,
-    wrapable: &[bool],
-    max_width: usize,
-) -> Vec<usize> {
+fn collapse_widths(mut widths: Vec<usize>, wrapable: &[bool], max_width: usize) -> Vec<usize> {
     let mut total_width: usize = widths.iter().sum();
     if !wrapable.iter().any(|&w| w) {
         return widths;

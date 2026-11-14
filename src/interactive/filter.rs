@@ -1,4 +1,4 @@
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::fmt::Display;
@@ -25,7 +25,8 @@ pub fn fuzzy_match(pattern: &str, text: &str) -> Option<(i64, Vec<usize>)> {
 
             // Consecutive bonus
             if let Some(prev) = prev_matched_idx
-                && prev + 1 == i {
+                && prev + 1 == i
+            {
                 score += 15;
             }
 

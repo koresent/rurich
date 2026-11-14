@@ -76,7 +76,8 @@ impl SpinnerColumn {
 
     pub fn with_preset(preset: SpinnerPreset) -> Self {
         Self {
-            spinner: Spinner::from_preset(preset).style(Style::parse("bold cyan").unwrap_or_default()),
+            spinner: Spinner::from_preset(preset)
+                .style(Style::parse("bold cyan").unwrap_or_default()),
             finished_text: Some("[bold green]✓[/]".to_string()),
             style: Some(Style::parse("bold cyan").unwrap_or_default()),
         }
@@ -105,8 +106,8 @@ impl ProgressColumn for SpinnerColumn {
     fn render(&self, task: &Task) -> Box<dyn Renderable> {
         if task.is_finished() {
             let text = self.finished_text.as_deref().unwrap_or("✓");
-            let renderable = render_markup(text)
-                .unwrap_or_else(|_| Text::from_plain(text.to_string()));
+            let renderable =
+                render_markup(text).unwrap_or_else(|_| Text::from_plain(text.to_string()));
             Box::new(renderable)
         } else {
             let mut s = self.spinner.clone();
@@ -249,29 +250,23 @@ impl ProgressColumn for BarColumn {
                 });
             bar = bar.complete_style(finish_st);
         } else {
-            let comp_st = self
-                .complete_style
-                .clone()
-                .unwrap_or_else(|| {
-                    if self.line_mode {
-                        Style::parse("color(#f92672)").unwrap_or_default()
-                    } else {
-                        Style::parse("bold cyan").unwrap_or_default()
-                    }
-                });
+            let comp_st = self.complete_style.clone().unwrap_or_else(|| {
+                if self.line_mode {
+                    Style::parse("color(#f92672)").unwrap_or_default()
+                } else {
+                    Style::parse("bold cyan").unwrap_or_default()
+                }
+            });
             bar = bar.complete_style(comp_st);
         }
 
-        let rem_st = self
-            .remaining_style
-            .clone()
-            .unwrap_or_else(|| {
-                if self.line_mode {
-                    Style::parse("color(#3a3a3a)").unwrap_or_default()
-                } else {
-                    Style::parse("dim").unwrap_or_default()
-                }
-            });
+        let rem_st = self.remaining_style.clone().unwrap_or_else(|| {
+            if self.line_mode {
+                Style::parse("color(#3a3a3a)").unwrap_or_default()
+            } else {
+                Style::parse("dim").unwrap_or_default()
+            }
+        });
         bar = bar.remaining_style(rem_st);
 
         Box::new(bar)

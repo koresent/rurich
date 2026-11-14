@@ -195,7 +195,9 @@ impl Style {
                         }
                         "double_underline" | "double-underline" | "uu" => {
                             style.attributes.remove(StyleAttributes::DOUBLE_UNDERLINE);
-                            style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                            style
+                                .set_attributes
+                                .insert(StyleAttributes::DOUBLE_UNDERLINE);
                         }
                         "strike" | "s" => {
                             style.attributes.remove(StyleAttributes::STRIKE);
@@ -234,7 +236,9 @@ impl Style {
                 }
                 "double_underline" | "double-underline" | "uu" => {
                     style.attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
-                    style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                    style
+                        .set_attributes
+                        .insert(StyleAttributes::DOUBLE_UNDERLINE);
                 }
                 "strike" | "s" => {
                     style.attributes.insert(StyleAttributes::STRIKE);
@@ -322,7 +326,9 @@ impl Style {
                         }
                         "double_underline" | "double-underline" | "uu" => {
                             style.attributes.remove(StyleAttributes::DOUBLE_UNDERLINE);
-                            style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                            style
+                                .set_attributes
+                                .insert(StyleAttributes::DOUBLE_UNDERLINE);
                         }
                         "strike" | "s" => {
                             style.attributes.remove(StyleAttributes::STRIKE);
@@ -361,7 +367,9 @@ impl Style {
                 }
                 "double_underline" | "double-underline" | "uu" => {
                     style.attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
-                    style.set_attributes.insert(StyleAttributes::DOUBLE_UNDERLINE);
+                    style
+                        .set_attributes
+                        .insert(StyleAttributes::DOUBLE_UNDERLINE);
                 }
                 "strike" | "s" => {
                     style.attributes.insert(StyleAttributes::STRIKE);

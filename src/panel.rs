@@ -185,9 +185,10 @@ impl<T: Renderable> Renderable for Panel<T> {
         let child_width = if self.expand {
             avail_w.saturating_sub(border_w)
         } else {
-            let measured = self
-                .renderable
-                .measure(console, &options.update_width(avail_w.saturating_sub(border_w)));
+            let measured = self.renderable.measure(
+                console,
+                &options.update_width(avail_w.saturating_sub(border_w)),
+            );
             let pad_h = self.padding.1 * 2;
             let mut w = measured.maximum + pad_h;
             if let Some(ref t) = self.title {
@@ -237,7 +238,11 @@ impl<T: Renderable> Renderable for Panel<T> {
                     sink.push(Segment {
                         text: Cow::Owned(format!(
                             "{}{}",
-                            if self.border_left { border_box.top_left.to_string() } else { "".to_string() },
+                            if self.border_left {
+                                border_box.top_left.to_string()
+                            } else {
+                                "".to_string()
+                            },
                             border_box.top.to_string().repeat(left_pad + 1)
                         )),
                         style: border_style.clone(),
@@ -252,7 +257,11 @@ impl<T: Renderable> Renderable for Panel<T> {
                         text: Cow::Owned(format!(
                             "{}{}",
                             border_box.top.to_string().repeat(right_pad + 1),
-                            if self.border_right { border_box.top_right.to_string() } else { "".to_string() }
+                            if self.border_right {
+                                border_box.top_right.to_string()
+                            } else {
+                                "".to_string()
+                            }
                         )),
                         style: border_style.clone(),
                         control: None,
@@ -270,9 +279,17 @@ impl<T: Renderable> Renderable for Panel<T> {
                 } else {
                     format!(
                         "{}{}{}",
-                        if self.border_left { border_box.top_left.to_string() } else { "".to_string() },
+                        if self.border_left {
+                            border_box.top_left.to_string()
+                        } else {
+                            "".to_string()
+                        },
                         border_box.top.to_string().repeat(child_width),
-                        if self.border_right { border_box.top_right.to_string() } else { "".to_string() }
+                        if self.border_right {
+                            border_box.top_right.to_string()
+                        } else {
+                            "".to_string()
+                        }
                     )
                 };
                 sink.push(Segment {
@@ -341,7 +358,11 @@ impl<T: Renderable> Renderable for Panel<T> {
                     sink.push(Segment {
                         text: Cow::Owned(format!(
                             "{}{}",
-                            if self.border_left { border_box.bottom_left.to_string() } else { "".to_string() },
+                            if self.border_left {
+                                border_box.bottom_left.to_string()
+                            } else {
+                                "".to_string()
+                            },
                             border_box.bottom.to_string().repeat(left_pad + 1)
                         )),
                         style: border_style.clone(),
@@ -356,7 +377,11 @@ impl<T: Renderable> Renderable for Panel<T> {
                         text: Cow::Owned(format!(
                             "{}{}",
                             border_box.bottom.to_string().repeat(right_pad + 1),
-                            if self.border_right { border_box.bottom_right.to_string() } else { "".to_string() }
+                            if self.border_right {
+                                border_box.bottom_right.to_string()
+                            } else {
+                                "".to_string()
+                            }
                         )),
                         style: border_style,
                         control: None,
@@ -374,9 +399,17 @@ impl<T: Renderable> Renderable for Panel<T> {
                 } else {
                     format!(
                         "{}{}{}",
-                        if self.border_left { border_box.bottom_left.to_string() } else { "".to_string() },
+                        if self.border_left {
+                            border_box.bottom_left.to_string()
+                        } else {
+                            "".to_string()
+                        },
                         border_box.bottom.to_string().repeat(child_width),
-                        if self.border_right { border_box.bottom_right.to_string() } else { "".to_string() }
+                        if self.border_right {
+                            border_box.bottom_right.to_string()
+                        } else {
+                            "".to_string()
+                        }
                     )
                 };
                 sink.push(Segment {
@@ -437,7 +470,10 @@ mod tests {
     #[test]
     fn test_panel_left_accent() {
         let console = Console::with_dimensions(15, 5).with_color_system(ColorSystem::NoColor);
-        let panel = Panel::new("Note").box_style(ASCII).left_accent().padding(0, 1);
+        let panel = Panel::new("Note")
+            .box_style(ASCII)
+            .left_accent()
+            .padding(0, 1);
         let out = console.capture(|c| {
             c.print(panel);
         });
@@ -451,7 +487,10 @@ mod tests {
     #[test]
     fn test_panel_margin() {
         let console = Console::with_dimensions(20, 5).with_color_system(ColorSystem::NoColor);
-        let panel = Panel::new("Text").box_style(ASCII).margin(1, 2).padding(0, 0);
+        let panel = Panel::new("Text")
+            .box_style(ASCII)
+            .margin(1, 2)
+            .padding(0, 0);
         let out = console.capture(|c| {
             c.print(panel);
         });

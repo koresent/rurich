@@ -1,4 +1,4 @@
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::io::{self, stdout};
@@ -42,7 +42,11 @@ impl ConfirmDialog {
 
     pub fn handle_key(&mut self, key: KeyEvent) -> InteractiveAction<bool> {
         match key.code {
-            KeyCode::Left | KeyCode::Right | KeyCode::Tab | KeyCode::Char('h') | KeyCode::Char('l') => {
+            KeyCode::Left
+            | KeyCode::Right
+            | KeyCode::Tab
+            | KeyCode::Char('h')
+            | KeyCode::Char('l') => {
                 self.active = !self.active;
             }
             KeyCode::Char('y') | KeyCode::Char('Y') => {
@@ -127,10 +131,7 @@ mod tests {
         assert!(dialog.active);
 
         // Tab toggles to No, Enter confirms
-        let keys = vec![
-            KeyEvent::from(KeyCode::Tab),
-            KeyEvent::from(KeyCode::Enter),
-        ];
+        let keys = vec![KeyEvent::from(KeyCode::Tab), KeyEvent::from(KeyCode::Enter)];
 
         let res = dialog.run_headless(keys);
         assert_eq!(res, Some(false));

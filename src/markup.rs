@@ -112,7 +112,9 @@ pub fn render(markup: &str) -> Result<Text, RurichError> {
         // Parse tag and optional parameter (e.g. "link=https://...", "link(https://...)", or "color(#ff00aa)")
         let (tag_name, tag_param) = if let Some((name, param)) = tag_inner.split_once('=') {
             (name.trim(), Some(param.trim().to_string()))
-        } else if let Some((name, param)) = tag_inner.strip_suffix(')').and_then(|s| s.split_once('(')) {
+        } else if let Some((name, param)) =
+            tag_inner.strip_suffix(')').and_then(|s| s.split_once('('))
+        {
             let n = name.trim();
             if n == "link" {
                 ("link", Some(param.trim().to_string()))

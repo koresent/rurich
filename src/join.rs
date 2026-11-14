@@ -102,8 +102,7 @@ impl<'b> Renderable for JoinedBlock<'b> {
                     } else {
                         let line_idx = row - pad_top;
                         let line = &lines[line_idx];
-                        let current_line_len: usize =
-                            line.iter().map(|s| cell_len(&s.text)).sum();
+                        let current_line_len: usize = line.iter().map(|s| cell_len(&s.text)).sum();
                         sink.extend(line.iter().cloned());
                         if current_line_len < *item_width {
                             sink.push(Segment::unstyled(Cow::Owned(

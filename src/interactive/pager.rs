@@ -1,5 +1,5 @@
 use crate::console::Console;
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::protocol::Renderable;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::io::{self, stdout};
@@ -88,7 +88,8 @@ impl Pager {
 
     pub fn run_headless(&mut self, keys: impl IntoIterator<Item = KeyEvent>) {
         for key in keys {
-            if let InteractiveAction::Submit(()) | InteractiveAction::Cancel = self.handle_key(key) {
+            if let InteractiveAction::Submit(()) | InteractiveAction::Cancel = self.handle_key(key)
+            {
                 break;
             }
         }
@@ -159,10 +160,7 @@ mod tests {
         let mut pager = Pager::new(&content).height(10);
         assert_eq!(pager.top_line, 0);
 
-        let keys = vec![
-            KeyEvent::from(KeyCode::Down),
-            KeyEvent::from(KeyCode::Down),
-        ];
+        let keys = vec![KeyEvent::from(KeyCode::Down), KeyEvent::from(KeyCode::Down)];
         pager.run_headless(keys);
         assert_eq!(pager.top_line, 2);
     }

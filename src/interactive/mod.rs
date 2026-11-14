@@ -6,8 +6,8 @@ pub mod input;
 pub mod pager;
 
 use crossterm::cursor::{Hide, MoveToColumn, MoveUp, Show};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
-use std::io::{self, stdout, Write};
+use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
+use std::io::{self, Write, stdout};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InteractiveAction<T> {

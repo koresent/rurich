@@ -1,4 +1,4 @@
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::io::{self, stdout};
 
@@ -240,13 +240,17 @@ impl TextArea {
             KeyCode::Up => {
                 if self.cursor_row > 0 {
                     self.cursor_row -= 1;
-                    self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].chars().count());
+                    self.cursor_col = self
+                        .cursor_col
+                        .min(self.lines[self.cursor_row].chars().count());
                 }
             }
             KeyCode::Down => {
                 if self.cursor_row + 1 < self.lines.len() {
                     self.cursor_row += 1;
-                    self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].chars().count());
+                    self.cursor_col = self
+                        .cursor_col
+                        .min(self.lines[self.cursor_row].chars().count());
                 }
             }
             KeyCode::Esc => {

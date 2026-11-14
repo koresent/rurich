@@ -1,4 +1,4 @@
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::fs;
 use std::io::{self, stdout};

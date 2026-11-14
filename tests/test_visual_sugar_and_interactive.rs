@@ -45,7 +45,9 @@ fn test_sparkline_variations() {
     let spark = Sparkline::new(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]);
     assert_eq!(spark.render_string(), "\u{2581}▂▃▄▅▆▇█");
 
-    let spark_ints = Sparkline::from_integers(vec![10, 20, 30]).min(10.0).max(30.0);
+    let spark_ints = Sparkline::from_integers(vec![10, 20, 30])
+        .min(10.0)
+        .max(30.0);
     assert_eq!(spark_ints.render_string(), "\u{2581}▅█");
 }
 
@@ -131,7 +133,12 @@ fn test_interactive_choose_and_multichoose() {
 
 #[test]
 fn test_interactive_filter_fuzzy() {
-    let mut filter = Filter::new(vec!["authentication", "authorization", "database", "analytics"]);
+    let mut filter = Filter::new(vec![
+        "authentication",
+        "authorization",
+        "database",
+        "analytics",
+    ]);
     let res = filter.run_headless(vec![
         KeyEvent::from(KeyCode::Char('a')),
         KeyEvent::from(KeyCode::Char('u')),
@@ -191,9 +198,7 @@ fn test_interactive_pager_navigation() {
 #[test]
 fn test_interactive_file_picker_navigation() {
     let mut picker = FilePicker::new(".").expect("valid cwd");
-    let res = picker.run_headless(vec![
-        KeyEvent::from(KeyCode::Down),
-    ]);
+    let res = picker.run_headless(vec![KeyEvent::from(KeyCode::Down)]);
     assert_eq!(res, None); // didn't press enter on file, just moved cursor
 }
 

@@ -1,4 +1,4 @@
-use crate::interactive::{redraw_view, InteractiveAction, RawGuard};
+use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::fmt::Display;
@@ -132,11 +132,7 @@ impl<T: Display + Clone> Choose<T> {
 
         for (i, item) in self.items.iter().enumerate() {
             let is_cursor = i == self.cursor;
-            let cursor_mark = if is_cursor {
-                &self.cursor_prefix
-            } else {
-                "  "
-            };
+            let cursor_mark = if is_cursor { &self.cursor_prefix } else { "  " };
 
             out.push_str(cursor_mark);
 

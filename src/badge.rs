@@ -9,10 +9,10 @@ use std::borrow::Cow;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BadgeStyle {
     #[default]
-    Square,    // [ TEXT ]
+    Square, // [ TEXT ]
     Rounded,   // ( TEXT )
     Powerline, // TEXT
-    Minimal,   //  TEXT 
+    Minimal,   //  TEXT
 }
 
 #[derive(Debug, Clone)]

@@ -538,8 +538,14 @@ mod tests {
         t.gradient(Color::from_rgb(255, 0, 0), Color::from_rgb(0, 0, 255));
         let segs = t.render_to_segments();
         assert_eq!(segs.len(), 3);
-        assert_eq!(segs[0].style.as_ref().unwrap().color.unwrap(), Color::from_rgb(255, 0, 0));
-        assert_eq!(segs[2].style.as_ref().unwrap().color.unwrap(), Color::from_rgb(0, 0, 255));
+        assert_eq!(
+            segs[0].style.as_ref().unwrap().color.unwrap(),
+            Color::from_rgb(255, 0, 0)
+        );
+        assert_eq!(
+            segs[2].style.as_ref().unwrap().color.unwrap(),
+            Color::from_rgb(0, 0, 255)
+        );
     }
 
     #[test]

@@ -110,25 +110,47 @@ impl Spinner {
 
     pub fn from_preset(preset: SpinnerPreset) -> Self {
         match preset {
-            SpinnerPreset::Dots => Self::new(vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 80),
+            SpinnerPreset::Dots => {
+                Self::new(vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 80)
+            }
             SpinnerPreset::Dots2 => Self::new(vec!["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"], 80),
             SpinnerPreset::Line => Self::new(vec!["-", "\\", "|", "/"], 130),
-            SpinnerPreset::MiniDot => Self::new(vec!["⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓"], 80),
+            SpinnerPreset::MiniDot => {
+                Self::new(vec!["⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓"], 80)
+            }
             SpinnerPreset::Jump => Self::new(vec!["⢄", "⢂", "⢁", "⡁", "⡈", "⡐", "⡠"], 100),
             SpinnerPreset::Pulse => Self::new(vec!["█", "▓", "▒", "░"], 100),
             SpinnerPreset::Points => Self::new(vec!["∙∙∙", "●∙∙", "∙●∙", "∙∙●", "∙∙∙"], 120),
             SpinnerPreset::Globe => Self::new(vec!["🌍", "🌎", "🌏"], 180),
-            SpinnerPreset::Moon => Self::new(vec!["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"], 100),
-            SpinnerPreset::Clock => Self::new(vec!["🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"], 100),
-            SpinnerPreset::BouncingBar => Self::new(vec!["[    ]", "[=   ]", "[==  ]", "[=== ]", "[====]", "[ ===]", "[  ==]", "[   =]", "[    ]"], 80),
+            SpinnerPreset::Moon => {
+                Self::new(vec!["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"], 100)
+            }
+            SpinnerPreset::Clock => Self::new(
+                vec![
+                    "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛",
+                ],
+                100,
+            ),
+            SpinnerPreset::BouncingBar => Self::new(
+                vec![
+                    "[    ]", "[=   ]", "[==  ]", "[=== ]", "[====]", "[ ===]", "[  ==]", "[   =]",
+                    "[    ]",
+                ],
+                80,
+            ),
             SpinnerPreset::Pipe => Self::new(vec!["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"], 100),
             SpinnerPreset::Arc => Self::new(vec!["◜", "◠", "◝", "◞", "◡", "◟"], 100),
             SpinnerPreset::SquareCorners => Self::new(vec!["◰", "◳", "◲", "◱"], 100),
             SpinnerPreset::CircleHalves => Self::new(vec!["◐", "◓", "◑", "◒"], 100),
             SpinnerPreset::Arrow => Self::new(vec!["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"], 100),
             SpinnerPreset::Triangle => Self::new(vec!["◢", "◣", "◤", "◥"], 100),
-            SpinnerPreset::GrowHorizontal => Self::new(vec!["▏", "▎", "▍", "▌", "▋", "▊", "▉", "▊", "▋", "▌", "▍", "▎"], 100),
-            SpinnerPreset::GrowVertical => Self::new(vec![" ", "▃", "▄", "▅", "▆", "▇", "▆", "▅", "▄", "▃"], 100),
+            SpinnerPreset::GrowHorizontal => Self::new(
+                vec!["▏", "▎", "▍", "▌", "▋", "▊", "▉", "▊", "▋", "▌", "▍", "▎"],
+                100,
+            ),
+            SpinnerPreset::GrowVertical => {
+                Self::new(vec![" ", "▃", "▄", "▅", "▆", "▇", "▆", "▅", "▄", "▃"], 100)
+            }
             SpinnerPreset::Hamburger => Self::new(vec!["☱", "☲", "☴"], 100),
             SpinnerPreset::Monkey => Self::new(vec!["🙈", "🙉", "🙊"], 300),
         }
@@ -164,7 +186,8 @@ impl Spinner {
 
     pub fn get_frame(&self) -> &str {
         let elapsed = self.start_time.elapsed();
-        let index = (elapsed.as_millis() / self.interval.as_millis().max(1)) as usize % self.frames.len();
+        let index =
+            (elapsed.as_millis() / self.interval.as_millis().max(1)) as usize % self.frames.len();
         &self.frames[index]
     }
 }
@@ -414,8 +437,14 @@ impl Renderable for ProgressBar {
 
         let full_ch = self.complete_char.unwrap_or('█');
         let empty_ch = self.remaining_char.unwrap_or('░');
-        let comp_style = self.complete_style.clone().or_else(|| Some(self.style.clone()));
-        let rem_style = self.remaining_style.clone().or_else(|| Some(self.style.clone()));
+        let comp_style = self
+            .complete_style
+            .clone()
+            .or_else(|| Some(self.style.clone()));
+        let rem_style = self
+            .remaining_style
+            .clone()
+            .or_else(|| Some(self.style.clone()));
 
         let mut completed_str = String::new();
         let mut remaining_str = String::new();
