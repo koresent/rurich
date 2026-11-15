@@ -88,8 +88,10 @@ impl ConfirmDialog {
 
         let sel_bg = crate::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
         let sel_fg = crate::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
-        let unsel_bg = crate::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
-        let unsel_fg = crate::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
+        let unsel_bg =
+            crate::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
+        let unsel_fg =
+            crate::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
 
         let selected_style = format!("{sel_bg}{sel_fg}");
         let unselected_style = format!("{unsel_bg}{unsel_fg}");

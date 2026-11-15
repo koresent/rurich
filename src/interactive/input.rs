@@ -112,7 +112,8 @@ impl Input {
     pub fn render_view(&self) -> String {
         let mut out = String::new();
         let prompt_fg = crate::interactive::env_fg_ansi("GUM_INPUT_PROMPT_FOREGROUND", "#fabd2f");
-        let placeholder_fg = crate::interactive::env_fg_ansi("GUM_INPUT_HEADER_FOREGROUND", "#928374");
+        let placeholder_fg =
+            crate::interactive::env_fg_ansi("GUM_INPUT_HEADER_FOREGROUND", "#928374");
 
         let prompt_symbol = self.prompt.trim_end();
         out.push_str(&format!("{prompt_fg}{prompt_symbol}\x1b[0m "));

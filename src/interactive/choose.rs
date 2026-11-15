@@ -130,12 +130,14 @@ impl<T: Display + Clone> Choose<T> {
     pub fn render_view(&self) -> String {
         let mut out = String::new();
         if let Some(ref h) = self.header {
-            let header_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_HEADER_FOREGROUND", "#928374");
+            let header_fg =
+                crate::interactive::env_fg_ansi("GUM_CHOOSE_HEADER_FOREGROUND", "#928374");
             out.push_str(&format!("{header_fg}{h}\x1b[0m\n"));
         }
 
         let cursor_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
-        let selected_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
+        let selected_fg =
+            crate::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
 
         for (i, item) in self.items.iter().enumerate() {
             let is_cursor = i == self.cursor;

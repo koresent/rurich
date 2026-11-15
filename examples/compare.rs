@@ -1,7 +1,7 @@
 use rurich::badge::{Badge, BadgeStyle, Breadcrumbs};
 use rurich::callout::Callout;
 use rurich::interactive::{Choose, ConfirmDialog, Filter, Input};
-use rurich::join::{join_horizontal, AlignJoin};
+use rurich::join::{AlignJoin, join_horizontal};
 use rurich::prelude::*;
 use rurich::sparkline::Sparkline;
 use rurich::spinner_bar::ProgressBar;
@@ -148,7 +148,6 @@ fn render_side_by_side(
     println!();
 }
 
-
 fn compare_tables(env: &CompareEnv, panel_width: usize) {
     let console = Console::new();
     console.rule(Some("Tables"));
@@ -181,9 +180,24 @@ c.print(t)
 
     let mut table = Table::new().title("Services").box_style(ROUNDED);
     table
-        .add_column(Column::new().header("Service").justify(JustifyMethod::Left).style(parse_style("cyan")))
-        .add_column(Column::new().header("Status").justify(JustifyMethod::Center).style(parse_style("green")))
-        .add_column(Column::new().header("Latency").justify(JustifyMethod::Right).style(parse_style("magenta")));
+        .add_column(
+            Column::new()
+                .header("Service")
+                .justify(JustifyMethod::Left)
+                .style(parse_style("cyan")),
+        )
+        .add_column(
+            Column::new()
+                .header("Status")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("green")),
+        )
+        .add_column(
+            Column::new()
+                .header("Latency")
+                .justify(JustifyMethod::Right)
+                .style(parse_style("magenta")),
+        );
     table.add_row(vec!["auth-svc", "ONLINE", "1.2 ms"]);
     table.add_row(vec!["data-api", "ONLINE", "4.8 ms"]);
     table.add_row(vec!["payment", "DEGRADED", "145.0 ms"]);
@@ -278,9 +292,7 @@ c.print(p)
         .run_python_rich(&python_code)
         .unwrap_or_else(|e| format!("Python error: {}", e));
 
-    let content = markup_text(
-        "Deployment completed.\nCluster is ready for traffic.",
-    );
+    let content = markup_text("Deployment completed.\nCluster is ready for traffic.");
     let rurich_panel = Panel::new(content)
         .title_text(markup_text("[bold green]Deploy Status[/]"))
         .subtitle_text(markup_text("[dim]us-east-1a[/]"))
@@ -541,8 +553,10 @@ fn compare_gum_widgets(env: &CompareEnv, panel_width: usize) {
     );
 
     // Case 2: Interactive Choose View snapshot
-    let choose_cursor_fg = rurich::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
-    let choose_selected_fg = rurich::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
+    let choose_cursor_fg =
+        rurich::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
+    let choose_selected_fg =
+        rurich::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
     let gum_choose_mock = format!(
         "Select target:\n{choose_cursor_fg}> {choose_selected_fg}Production (us-east-1)\x1b[0m\n  Staging (eu-central-1)\n  Development (local)"
     );
@@ -564,11 +578,16 @@ fn compare_gum_widgets(env: &CompareEnv, panel_width: usize) {
     );
 
     // Case 3: Confirm Dialog snapshot
-    let confirm_sel_bg = rurich::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
-    let confirm_sel_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
-    let confirm_unsel_bg = rurich::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
-    let confirm_unsel_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
-    let confirm_prompt_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_PROMPT_FOREGROUND", "#ebdbb2");
+    let confirm_sel_bg =
+        rurich::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
+    let confirm_sel_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
+    let confirm_unsel_bg =
+        rurich::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
+    let confirm_unsel_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
+    let confirm_prompt_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_PROMPT_FOREGROUND", "#ebdbb2");
     let gum_confirm_mock = format!(
         "{confirm_prompt_fg}Deploy to production?\x1b[0m\n {confirm_sel_bg}{confirm_sel_fg}   Yes   \x1b[0m  {confirm_unsel_bg}{confirm_unsel_fg}   No   \x1b[0m"
     );
@@ -593,18 +612,31 @@ fn compare_rurich_exclusives(panel_width: usize) {
     let mut grad_text = Text::from_plain("===> Continuous TrueColor RGB Gradient Transition <===");
     grad_text.gradient(Color::from_rgb(255, 50, 100), Color::from_rgb(0, 200, 255));
 
-    let mut rainbow_text = Text::from_plain("===> Full Spectrum Rainbow Walk Across Characters <===");
+    let mut rainbow_text =
+        Text::from_plain("===> Full Spectrum Rainbow Walk Across Characters <===");
     rainbow_text.rainbow();
 
-    console.println(Panel::new(grad_text).box_style(ROUNDED).width(panel_width * 2 + 2));
-    console.println(Panel::new(rainbow_text).box_style(ROUNDED).width(panel_width * 2 + 2));
+    console.println(
+        Panel::new(grad_text)
+            .box_style(ROUNDED)
+            .width(panel_width * 2 + 2),
+    );
+    console.println(
+        Panel::new(rainbow_text)
+            .box_style(ROUNDED)
+            .width(panel_width * 2 + 2),
+    );
     println!();
 
     // 2. Sub-character Smooth Progress Bar
     let inner_width = panel_width.saturating_sub(4);
-    let mut bar_normal = ProgressBar::new(100).smooth(false).width(inner_width.saturating_sub(2));
+    let mut bar_normal = ProgressBar::new(100)
+        .smooth(false)
+        .width(inner_width.saturating_sub(2));
     bar_normal.update(57);
-    let mut bar_smooth = ProgressBar::new(100).smooth(true).width(inner_width.saturating_sub(2));
+    let mut bar_smooth = ProgressBar::new(100)
+        .smooth(true)
+        .width(inner_width.saturating_sub(2));
     bar_smooth.update(57);
 
     let inner_console = Console::with_dimensions(inner_width, 24);
@@ -646,7 +678,11 @@ fn compare_rurich_exclusives(panel_width: usize) {
         c.println(breadcrumbs);
     });
     let badge_text = AnsiDecoder::new().decode(&badge_out);
-    console.println(Panel::new(badge_text).box_style(ROUNDED).width(panel_width * 2 + 2));
+    console.println(
+        Panel::new(badge_text)
+            .box_style(ROUNDED)
+            .width(panel_width * 2 + 2),
+    );
     println!();
 
     // 4. Callout Admonitions
@@ -671,14 +707,20 @@ fn compare_rurich_exclusives(panel_width: usize) {
     );
 
     // 5. Sparklines
-    let sparkline = Sparkline::new(vec![1.0, 3.2, 5.5, 2.0, 8.4, 9.1, 7.3, 4.0, 1.2, 0.5, 6.2, 8.9])
-        .style(parse_style("cyan"));
+    let sparkline = Sparkline::new(vec![
+        1.0, 3.2, 5.5, 2.0, 8.4, 9.1, 7.3, 4.0, 1.2, 0.5, 6.2, 8.9,
+    ])
+    .style(parse_style("cyan"));
     let spark_out = console.capture(|c| {
         c.print("CPU Load (12 ticks): ");
         c.println(sparkline);
     });
     let spark_text = AnsiDecoder::new().decode(&spark_out);
-    console.println(Panel::new(spark_text).box_style(ROUNDED).width(panel_width * 2 + 2));
+    console.println(
+        Panel::new(spark_text)
+            .box_style(ROUNDED)
+            .width(panel_width * 2 + 2),
+    );
     println!();
 }
 
@@ -688,32 +730,187 @@ fn print_parity_matrix() {
 
     let mut table = Table::new().title("Feature Comparison").box_style(ROUNDED);
     table
-        .add_column(Column::new().header("Feature").justify(JustifyMethod::Left).style(parse_style("bold")))
-        .add_column(Column::new().header("Rich").justify(JustifyMethod::Center).style(parse_style("cyan")))
-        .add_column(Column::new().header("Gum").justify(JustifyMethod::Center).style(parse_style("magenta")))
-        .add_column(Column::new().header("RuRich").justify(JustifyMethod::Center).style(parse_style("green")))
-        .add_column(Column::new().header("Status").justify(JustifyMethod::Center))
-        .add_column(Column::new().header("Notes").justify(JustifyMethod::Left).style(parse_style("dim")));
+        .add_column(
+            Column::new()
+                .header("Feature")
+                .justify(JustifyMethod::Left)
+                .style(parse_style("bold")),
+        )
+        .add_column(
+            Column::new()
+                .header("Rich")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("cyan")),
+        )
+        .add_column(
+            Column::new()
+                .header("Gum")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("magenta")),
+        )
+        .add_column(
+            Column::new()
+                .header("RuRich")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("green")),
+        )
+        .add_column(
+            Column::new()
+                .header("Status")
+                .justify(JustifyMethod::Center),
+        )
+        .add_column(
+            Column::new()
+                .header("Notes")
+                .justify(JustifyMethod::Left)
+                .style(parse_style("dim")),
+        );
 
-    table.add_row(vec!["Tables", "Full", "Basic", "Full", "Parity", "13 box styles, ratio solver, sections"]);
-    table.add_row(vec!["Panels", "Full", "Basic", "Full", "Parity", "Margin, padding, left-accent, titles"]);
-    table.add_row(vec!["BBCode & TrueColor", "Full", "N/A", "Full", "Parity", "Hex (#rgb), RGB triplets, OSC 8 links"]);
-    table.add_row(vec!["Trees", "Full", "N/A", "Full", "Parity", "Branch guides (DEFAULT, ASCII, BOLD, DOUBLE)"]);
-    table.add_row(vec!["Markdown", "Full", "Full", "Full", "Parity", "Headings, lists, codeblocks, quotes"]);
-    table.add_row(vec!["Syntax Highlighting", "Full", "N/A", "Full", "Parity", "Syntect lexer, themes, line gutters"]);
-    table.add_row(vec!["JSON Formatter", "Full", "N/A", "Full", "Parity", "Tokenized keys, values, custom indent"]);
-    table.add_row(vec!["Choose / MultiSelect", "Prompt", "Full", "Full", "Parity", "Vim keys, filter search, checkboxes"]);
-    table.add_row(vec!["Fuzzy Filter", "N/A", "Full", "Full", "Parity", "Subsequence scoring, highlighted runes"]);
-    table.add_row(vec!["Confirm Dialog", "Prompt", "Full", "Full", "Parity", "Tab/arrow toggle, yes/no labels"]);
-    table.add_row(vec!["Input / TextArea", "Prompt", "Full", "Full", "Parity", "Cursor navigation, placeholder"]);
-    table.add_row(vec!["Pager & FilePicker", "N/A", "Full", "Full", "Parity", "Scrollable buffer, directory tree"]);
+    table.add_row(vec![
+        "Tables",
+        "Full",
+        "Basic",
+        "Full",
+        "Parity",
+        "13 box styles, ratio solver, sections",
+    ]);
+    table.add_row(vec![
+        "Panels",
+        "Full",
+        "Basic",
+        "Full",
+        "Parity",
+        "Margin, padding, left-accent, titles",
+    ]);
+    table.add_row(vec![
+        "BBCode & TrueColor",
+        "Full",
+        "N/A",
+        "Full",
+        "Parity",
+        "Hex (#rgb), RGB triplets, OSC 8 links",
+    ]);
+    table.add_row(vec![
+        "Trees",
+        "Full",
+        "N/A",
+        "Full",
+        "Parity",
+        "Branch guides (DEFAULT, ASCII, BOLD, DOUBLE)",
+    ]);
+    table.add_row(vec![
+        "Markdown",
+        "Full",
+        "Full",
+        "Full",
+        "Parity",
+        "Headings, lists, codeblocks, quotes",
+    ]);
+    table.add_row(vec![
+        "Syntax Highlighting",
+        "Full",
+        "N/A",
+        "Full",
+        "Parity",
+        "Syntect lexer, themes, line gutters",
+    ]);
+    table.add_row(vec![
+        "JSON Formatter",
+        "Full",
+        "N/A",
+        "Full",
+        "Parity",
+        "Tokenized keys, values, custom indent",
+    ]);
+    table.add_row(vec![
+        "Choose / MultiSelect",
+        "Prompt",
+        "Full",
+        "Full",
+        "Parity",
+        "Vim keys, filter search, checkboxes",
+    ]);
+    table.add_row(vec![
+        "Fuzzy Filter",
+        "N/A",
+        "Full",
+        "Full",
+        "Parity",
+        "Subsequence scoring, highlighted runes",
+    ]);
+    table.add_row(vec![
+        "Confirm Dialog",
+        "Prompt",
+        "Full",
+        "Full",
+        "Parity",
+        "Tab/arrow toggle, yes/no labels",
+    ]);
+    table.add_row(vec![
+        "Input / TextArea",
+        "Prompt",
+        "Full",
+        "Full",
+        "Parity",
+        "Cursor navigation, placeholder",
+    ]);
+    table.add_row(vec![
+        "Pager & FilePicker",
+        "N/A",
+        "Full",
+        "Full",
+        "Parity",
+        "Scrollable buffer, directory tree",
+    ]);
     table.add_section();
-    table.add_row(vec!["Text Gradients", "Manual", "N/A", "Built-in", "Extended", "Smooth RGB interpolation across runes"]);
-    table.add_row(vec!["Sub-character Progress", "1-char", "ASCII", "8-level", "Extended", "Fractional block resolution: ▏..█"]);
-    table.add_row(vec!["Badges & Breadcrumbs", "N/A", "N/A", "Built-in", "Extended", "Powerline/rounded pills, path crumbs"]);
-    table.add_row(vec!["Callout Admonitions", "N/A", "N/A", "Built-in", "Extended", "Note, tip, warning, caution blocks"]);
-    table.add_row(vec!["Block Stitching (Join)", "Columns", "Basic", "Full", "Extended", "2D arbitrary alignment (H & V)"]);
-    table.add_row(vec!["Startup Latency", "~80ms", "~15ms", "<1ms", "Faster", "Native binary, zero VM overhead"]);
+    table.add_row(vec![
+        "Text Gradients",
+        "Manual",
+        "N/A",
+        "Built-in",
+        "Extended",
+        "Smooth RGB interpolation across runes",
+    ]);
+    table.add_row(vec![
+        "Sub-character Progress",
+        "1-char",
+        "ASCII",
+        "8-level",
+        "Extended",
+        "Fractional block resolution: ▏..█",
+    ]);
+    table.add_row(vec![
+        "Badges & Breadcrumbs",
+        "N/A",
+        "N/A",
+        "Built-in",
+        "Extended",
+        "Powerline/rounded pills, path crumbs",
+    ]);
+    table.add_row(vec![
+        "Callout Admonitions",
+        "N/A",
+        "N/A",
+        "Built-in",
+        "Extended",
+        "Note, tip, warning, caution blocks",
+    ]);
+    table.add_row(vec![
+        "Block Stitching (Join)",
+        "Columns",
+        "Basic",
+        "Full",
+        "Extended",
+        "2D arbitrary alignment (H & V)",
+    ]);
+    table.add_row(vec![
+        "Startup Latency",
+        "~80ms",
+        "~15ms",
+        "<1ms",
+        "Faster",
+        "Native binary, zero VM overhead",
+    ]);
 
     console.println(&table);
     println!();
@@ -728,19 +925,70 @@ fn export_reports(_env: &CompareEnv, out_dir: &Path) {
         return;
     }
 
-    let mut table = Table::new().title("RuRich vs Python Rich vs Charm Gum").box_style(ROUNDED);
+    let mut table = Table::new()
+        .title("RuRich vs Python Rich vs Charm Gum")
+        .box_style(ROUNDED);
     table
-        .add_column(Column::new().header("Capability").justify(JustifyMethod::Left).style(parse_style("bold")))
-        .add_column(Column::new().header("Rich / Gum").justify(JustifyMethod::Center).style(parse_style("cyan")))
-        .add_column(Column::new().header("RuRich").justify(JustifyMethod::Center).style(parse_style("green")))
-        .add_column(Column::new().header("Evaluation").justify(JustifyMethod::Center));
-    table.add_row(vec!["Tables & Box Styles", "Supported", "Supported", "Parity"]);
-    table.add_row(vec!["Panels with Margin/Padding", "Supported", "Supported", "Parity"]);
-    table.add_row(vec!["BBCode & TrueColor", "Supported", "Supported", "Parity"]);
+        .add_column(
+            Column::new()
+                .header("Capability")
+                .justify(JustifyMethod::Left)
+                .style(parse_style("bold")),
+        )
+        .add_column(
+            Column::new()
+                .header("Rich / Gum")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("cyan")),
+        )
+        .add_column(
+            Column::new()
+                .header("RuRich")
+                .justify(JustifyMethod::Center)
+                .style(parse_style("green")),
+        )
+        .add_column(
+            Column::new()
+                .header("Evaluation")
+                .justify(JustifyMethod::Center),
+        );
+    table.add_row(vec![
+        "Tables & Box Styles",
+        "Supported",
+        "Supported",
+        "Parity",
+    ]);
+    table.add_row(vec![
+        "Panels with Margin/Padding",
+        "Supported",
+        "Supported",
+        "Parity",
+    ]);
+    table.add_row(vec![
+        "BBCode & TrueColor",
+        "Supported",
+        "Supported",
+        "Parity",
+    ]);
     table.add_row(vec!["Trees & Guides", "Supported", "Supported", "Parity"]);
-    table.add_row(vec!["Interactive Choose/Filter", "Gum only", "Supported", "Parity"]);
-    table.add_row(vec!["Text Gradients & Rainbow", "None", "Built-in", "Extended"]);
-    table.add_row(vec!["Sub-character Progress", "None", "Built-in", "Extended"]);
+    table.add_row(vec![
+        "Interactive Choose/Filter",
+        "Gum only",
+        "Supported",
+        "Parity",
+    ]);
+    table.add_row(vec![
+        "Text Gradients & Rainbow",
+        "None",
+        "Built-in",
+        "Extended",
+    ]);
+    table.add_row(vec![
+        "Sub-character Progress",
+        "None",
+        "Built-in",
+        "Extended",
+    ]);
     table.add_row(vec!["Badges & Callouts", "None", "Built-in", "Extended"]);
 
     let html_content = console.export_html(&table);
@@ -840,7 +1088,10 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
             ],
             None,
         );
-        println!("  Gum result   : {:?}", res.as_deref().unwrap_or("[Cancelled]"));
+        println!(
+            "  Gum result   : {:?}",
+            res.as_deref().unwrap_or("[Cancelled]")
+        );
         res
     } else {
         None
@@ -849,11 +1100,20 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
     wait_enter("1.2 Run RuRich: Press [Enter] to launch 'rurich::Choose' (↑/↓/j/k / Enter)...");
     let mut choose = Choose::new(choose_items.to_vec()).header("Select action to execute:");
     let rurich_res = choose.run().ok().flatten().and_then(|v| v.first().cloned());
-    println!("  RuRich result: {:?}", rurich_res.as_deref().unwrap_or("[Cancelled]"));
-    println!("  -> Result comparison: Gum={:?} | RuRich={:?}", gum_res.as_deref(), rurich_res.as_deref());
+    println!(
+        "  RuRich result: {:?}",
+        rurich_res.as_deref().unwrap_or("[Cancelled]")
+    );
+    println!(
+        "  -> Result comparison: Gum={:?} | RuRich={:?}",
+        gum_res.as_deref(),
+        rurich_res.as_deref()
+    );
 
-    let choose_cursor_fg = rurich::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
-    let choose_selected_fg = rurich::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
+    let choose_cursor_fg =
+        rurich::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
+    let choose_selected_fg =
+        rurich::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
     let gum_mock = format!(
         "Select action to execute:\n{choose_cursor_fg}> {choose_selected_fg}Deploy to Kubernetes\x1b[0m\n  Run Database Migrations\n  Generate Parity Report\n  Cancel"
     );
@@ -881,17 +1141,27 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
         None
     };
 
-    wait_enter("2.2 Run RuRich: Press [Enter] to launch 'rurich::ConfirmDialog' (Tab/h,l / Enter)...");
+    wait_enter(
+        "2.2 Run RuRich: Press [Enter] to launch 'rurich::ConfirmDialog' (Tab/h,l / Enter)...",
+    );
     let mut confirm = ConfirmDialog::new("Apply changes to production database?");
     let rurich_confirm_res = confirm.run().ok().flatten();
     println!("  RuRich decision: {:?}", rurich_confirm_res);
-    println!("  -> Result comparison: Gum={:?} | RuRich={:?}", gum_confirm_res, rurich_confirm_res);
+    println!(
+        "  -> Result comparison: Gum={:?} | RuRich={:?}",
+        gum_confirm_res, rurich_confirm_res
+    );
 
-    let confirm_sel_bg = rurich::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
-    let confirm_sel_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
-    let confirm_unsel_bg = rurich::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
-    let confirm_unsel_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
-    let confirm_prompt_fg = rurich::interactive::env_fg_ansi("GUM_CONFIRM_PROMPT_FOREGROUND", "#ebdbb2");
+    let confirm_sel_bg =
+        rurich::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
+    let confirm_sel_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
+    let confirm_unsel_bg =
+        rurich::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
+    let confirm_unsel_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
+    let confirm_prompt_fg =
+        rurich::interactive::env_fg_ansi("GUM_CONFIRM_PROMPT_FOREGROUND", "#ebdbb2");
     let gum_confirm_mock = format!(
         "{confirm_prompt_fg}Apply changes to production database?\x1b[0m\n {confirm_sel_bg}{confirm_sel_fg}   Yes   \x1b[0m  {confirm_unsel_bg}{confirm_unsel_fg}   No   \x1b[0m"
     );
@@ -914,7 +1184,10 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
             &["filter", "--placeholder", "Search commands..."],
             Some(filter_candidates),
         );
-        println!("  Gum match   : {:?}", res.as_deref().unwrap_or("[Cancelled]"));
+        println!(
+            "  Gum match   : {:?}",
+            res.as_deref().unwrap_or("[Cancelled]")
+        );
         res
     } else {
         None
@@ -930,12 +1203,22 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
     ])
     .placeholder("Search commands...");
     let rurich_filter_res = filter.run().ok().flatten();
-    println!("  RuRich match: {:?}", rurich_filter_res.as_deref().unwrap_or("[Cancelled]"));
-    println!("  -> Result comparison: Gum={:?} | RuRich={:?}", gum_filter_res.as_deref(), rurich_filter_res.as_deref());
+    println!(
+        "  RuRich match: {:?}",
+        rurich_filter_res.as_deref().unwrap_or("[Cancelled]")
+    );
+    println!(
+        "  -> Result comparison: Gum={:?} | RuRich={:?}",
+        gum_filter_res.as_deref(),
+        rurich_filter_res.as_deref()
+    );
 
-    let filter_prompt_fg = rurich::interactive::env_fg_ansi("GUM_FILTER_PROMPT_FOREGROUND", "#fabd2f");
-    let filter_header_fg = rurich::interactive::env_fg_ansi("GUM_FILTER_HEADER_FOREGROUND", "#928374");
-    let filter_ind_fg = rurich::interactive::env_fg_ansi("GUM_FILTER_INDICATOR_FOREGROUND", "#fabd2f");
+    let filter_prompt_fg =
+        rurich::interactive::env_fg_ansi("GUM_FILTER_PROMPT_FOREGROUND", "#fabd2f");
+    let filter_header_fg =
+        rurich::interactive::env_fg_ansi("GUM_FILTER_HEADER_FOREGROUND", "#928374");
+    let filter_ind_fg =
+        rurich::interactive::env_fg_ansi("GUM_FILTER_INDICATOR_FOREGROUND", "#fabd2f");
     let gum_filter_mock = format!(
         "{filter_prompt_fg}>\x1b[0m {filter_header_fg}Search commands...\x1b[0m\n{filter_ind_fg}•\x1b[0m git status\n  git commit -m 'feat: clean up'\n  git push origin main"
     );
@@ -956,7 +1239,10 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
             &["input", "--placeholder", "Enter configuration name..."],
             None,
         );
-        println!("  Gum input   : {:?}", res.as_deref().unwrap_or("[Cancelled]"));
+        println!(
+            "  Gum input   : {:?}",
+            res.as_deref().unwrap_or("[Cancelled]")
+        );
         res
     } else {
         None
@@ -965,11 +1251,20 @@ fn run_interactive_tui_showcase(env: &CompareEnv, panel_width: usize) {
     wait_enter("4.2 Run RuRich: Press [Enter] to launch 'rurich::Input' (type text / Enter)...");
     let mut input = Input::new().placeholder("Enter configuration name...");
     let rurich_input_res = input.run().ok().flatten();
-    println!("  RuRich input: {:?}", rurich_input_res.as_deref().unwrap_or("[Cancelled]"));
-    println!("  -> Result comparison: Gum={:?} | RuRich={:?}", gum_input_res.as_deref(), rurich_input_res.as_deref());
+    println!(
+        "  RuRich input: {:?}",
+        rurich_input_res.as_deref().unwrap_or("[Cancelled]")
+    );
+    println!(
+        "  -> Result comparison: Gum={:?} | RuRich={:?}",
+        gum_input_res.as_deref(),
+        rurich_input_res.as_deref()
+    );
 
-    let input_prompt_fg = rurich::interactive::env_fg_ansi("GUM_INPUT_PROMPT_FOREGROUND", "#fabd2f");
-    let input_header_fg = rurich::interactive::env_fg_ansi("GUM_INPUT_HEADER_FOREGROUND", "#928374");
+    let input_prompt_fg =
+        rurich::interactive::env_fg_ansi("GUM_INPUT_PROMPT_FOREGROUND", "#fabd2f");
+    let input_header_fg =
+        rurich::interactive::env_fg_ansi("GUM_INPUT_HEADER_FOREGROUND", "#928374");
     let gum_input_mock = format!(
         "{input_prompt_fg}>\x1b[0m \x1b[7mE\x1b[0m{input_header_fg}nter configuration name...\x1b[0m"
     );
@@ -1004,7 +1299,10 @@ fn main() {
     }
 
     if let Some(pos) = args.iter().position(|a| a == "--export") {
-        let path_str = args.get(pos + 1).map(|s| s.as_str()).unwrap_or("target/comparison");
+        let path_str = args
+            .get(pos + 1)
+            .map(|s| s.as_str())
+            .unwrap_or("target/comparison");
         export_reports(&env, Path::new(path_str));
         return;
     }
@@ -1022,7 +1320,10 @@ fn main() {
                 "exclusives" => compare_rurich_exclusives(panel_width),
                 "matrix" => print_parity_matrix(),
                 "interactive" => run_interactive_tui_showcase(&env, panel_width),
-                _ => eprintln!("Unknown category '{}'. Available: tables, panels, markup, trees, markdown, json, gum, exclusives, matrix, interactive", cat),
+                _ => eprintln!(
+                    "Unknown category '{}'. Available: tables, panels, markup, trees, markdown, json, gum, exclusives, matrix, interactive",
+                    cat
+                ),
             }
             return;
         }

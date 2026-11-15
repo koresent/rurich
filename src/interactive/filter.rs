@@ -156,8 +156,10 @@ impl<T: Display + Clone> Filter<T> {
     pub fn render_view(&self) -> String {
         let mut out = String::new();
         let prompt_fg = crate::interactive::env_fg_ansi("GUM_FILTER_PROMPT_FOREGROUND", "#fabd2f");
-        let placeholder_fg = crate::interactive::env_fg_ansi("GUM_FILTER_HEADER_FOREGROUND", "#928374");
-        let indicator_fg = crate::interactive::env_fg_ansi("GUM_FILTER_INDICATOR_FOREGROUND", "#fabd2f");
+        let placeholder_fg =
+            crate::interactive::env_fg_ansi("GUM_FILTER_HEADER_FOREGROUND", "#928374");
+        let indicator_fg =
+            crate::interactive::env_fg_ansi("GUM_FILTER_INDICATOR_FOREGROUND", "#fabd2f");
         let match_fg = crate::interactive::env_fg_ansi("GUM_FILTER_MATCH_FOREGROUND", "#fb4934");
 
         let prompt_symbol = self.prompt.trim_end();
@@ -173,7 +175,11 @@ impl<T: Display + Clone> Filter<T> {
         let matches = self.get_matches();
         for (i, &(orig_idx, _, ref matched_indices)) in matches.iter().enumerate() {
             let is_cursor = i == self.cursor;
-            let mark = if is_cursor { format!("{indicator_fg}•\x1b[0m ") } else { "  ".to_string() };
+            let mark = if is_cursor {
+                format!("{indicator_fg}•\x1b[0m ")
+            } else {
+                "  ".to_string()
+            };
             out.push_str(&mark);
 
             let item_str = self.items[orig_idx].to_string();
