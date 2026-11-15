@@ -1,6 +1,6 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::fmt::Display;
 use std::io::{self, stdout};
 
@@ -92,6 +92,10 @@ impl<T: Display + Clone> Filter<T> {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> InteractiveAction<T> {
+        if key.kind == KeyEventKind::Release {
+            return InteractiveAction::Continue;
+        }
+
         let matches = self.get_matches();
         let match_count = matches.len();
 
@@ -151,25 +155,32 @@ impl<T: Display + Clone> Filter<T> {
 
     pub fn render_view(&self) -> String {
         let mut out = String::new();
-        out.push_str(&self.prompt);
+        let prompt_fg = crate::interactive::env_fg_ansi("GUM_FILTER_PROMPT_FOREGROUND", "#fabd2f");
+        let placeholder_fg = crate::interactive::env_fg_ansi("GUM_FILTER_HEADER_FOREGROUND", "#928374");
+        let indicator_fg = crate::interactive::env_fg_ansi("GUM_FILTER_INDICATOR_FOREGROUND", "#fabd2f");
+        let match_fg = crate::interactive::env_fg_ansi("GUM_FILTER_MATCH_FOREGROUND", "#fb4934");
+
+        let prompt_symbol = self.prompt.trim_end();
+        out.push_str(&format!("{prompt_fg}{prompt_symbol}\x1b[0m "));
         if self.query.is_empty() {
-            out.push_str(&format!("\x1b[2m{}\x1b[0m", self.placeholder));
+            out.push_str(&format!("{placeholder_fg}{}\x1b[0m", self.placeholder));
         } else {
             out.push_str(&self.query);
+            out.push_str("\x1b[7m \x1b[0m");
         }
         out.push('\n');
 
         let matches = self.get_matches();
         for (i, &(orig_idx, _, ref matched_indices)) in matches.iter().enumerate() {
             let is_cursor = i == self.cursor;
-            let mark = if is_cursor { "> " } else { "  " };
-            out.push_str(mark);
+            let mark = if is_cursor { format!("{indicator_fg}•\x1b[0m ") } else { "  ".to_string() };
+            out.push_str(&mark);
 
             let item_str = self.items[orig_idx].to_string();
             let chars: Vec<char> = item_str.chars().collect();
             for (char_idx, &ch) in chars.iter().enumerate() {
                 if matched_indices.contains(&char_idx) {
-                    out.push_str(&format!("\x1b[1;36;4m{ch}\x1b[0m"));
+                    out.push_str(&format!("{match_fg}{ch}\x1b[0m"));
                 } else {
                     out.push(ch);
                 }
@@ -181,6 +192,9 @@ impl<T: Display + Clone> Filter<T> {
     }
 
     pub fn run(&mut self) -> io::Result<Option<T>> {
+        while event::poll(std::time::Duration::from_millis(10))? {
+            let _ = event::read()?;
+        }
         let _guard = RawGuard::new()?;
         let mut stdout = stdout();
         let mut printed_lines = 0;

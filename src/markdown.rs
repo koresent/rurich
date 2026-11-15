@@ -54,7 +54,7 @@ impl Renderable for Markdown {
                     Tag::Heading { level, .. } => {
                         heading_level = Some(level);
                         let s = match level {
-                            HeadingLevel::H1 => Style::parse("bold cyan").unwrap_or_default(),
+                            HeadingLevel::H1 => Style::parse("bold underline").unwrap_or_default(),
                             HeadingLevel::H2 => Style::parse("bold yellow").unwrap_or_default(),
                             HeadingLevel::H3 => Style::parse("bold green").unwrap_or_default(),
                             _ => Style::parse("bold italic").unwrap_or_default(),
@@ -109,30 +109,18 @@ impl Renderable for Markdown {
                         style_stack.pop();
                         let h_lvl = heading_level.take();
 
-                        let mut segs = Vec::new();
-                        current_text.render_to(console, options, &mut segs);
-                        sink.extend(segs.into_iter().map(|s| s.into_segment()));
-                        sink.push(Segment::line());
-
-                        // For H1 and H2, render a horizontal rule below
                         if let Some(HeadingLevel::H1) = h_lvl {
-                            let line = "━".repeat(options.max_width.min(60));
-                            sink.push(Segment {
-                                text: Cow::Owned(line),
-                                style: Some(Style::parse("cyan").unwrap_or_default()),
-                                control: None,
-                            });
-                            sink.push(Segment::line());
-                        } else if let Some(HeadingLevel::H2) = h_lvl {
-                            let line = "─".repeat(options.max_width.min(60));
-                            sink.push(Segment {
-                                text: Cow::Owned(line),
-                                style: Some(Style::parse("yellow").unwrap_or_default()),
-                                control: None,
-                            });
-                            sink.push(Segment::line());
+                            let aligned = crate::align::Align::center(&current_text).pad(false);
+                            let lines = console.render_lines_owned(&aligned, Some(options), false);
+                            for line in lines {
+                                sink.extend(line);
+                            }
+                        } else {
+                            let mut segs = Vec::new();
+                            current_text.render_to(console, options, &mut segs);
+                            sink.extend(segs.into_iter().map(|s| s.into_segment()));
                         }
-
+                        sink.push(Segment::line());
                         sink.push(Segment::line());
                         current_text = Text::new();
                     }

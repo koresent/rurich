@@ -1,5 +1,5 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::io::{self, stdout};
 
 /// Single-line interactive input prompt with placeholder and password masking.
@@ -44,6 +44,10 @@ impl Input {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> InteractiveAction<String> {
+        if key.kind == KeyEventKind::Release {
+            return InteractiveAction::Continue;
+        }
+
         let char_count = self.value.chars().count();
         match key.code {
             KeyCode::Char(c) => {
@@ -107,10 +111,22 @@ impl Input {
 
     pub fn render_view(&self) -> String {
         let mut out = String::new();
-        out.push_str(&self.prompt);
+        let prompt_fg = crate::interactive::env_fg_ansi("GUM_INPUT_PROMPT_FOREGROUND", "#fabd2f");
+        let placeholder_fg = crate::interactive::env_fg_ansi("GUM_INPUT_HEADER_FOREGROUND", "#928374");
+
+        let prompt_symbol = self.prompt.trim_end();
+        out.push_str(&format!("{prompt_fg}{prompt_symbol}\x1b[0m "));
 
         if self.value.is_empty() && !self.placeholder.is_empty() {
-            out.push_str(&format!("\x1b[2m{}\x1b[0m", self.placeholder));
+            let mut chars = self.placeholder.chars();
+            if let Some(first) = chars.next() {
+                out.push_str(&format!(
+                    "\x1b[7m{first}\x1b[0m{placeholder_fg}{}\x1b[0m",
+                    chars.as_str()
+                ));
+            } else {
+                out.push_str("\x1b[7m \x1b[0m");
+            }
         } else {
             let chars: Vec<char> = self.value.chars().collect();
             for (i, &ch) in chars.iter().enumerate() {
@@ -130,6 +146,9 @@ impl Input {
     }
 
     pub fn run(&mut self) -> io::Result<Option<String>> {
+        while event::poll(std::time::Duration::from_millis(10))? {
+            let _ = event::read()?;
+        }
         let _guard = RawGuard::new()?;
         let mut stdout = stdout();
         let mut printed_lines = 0;
@@ -286,6 +305,9 @@ impl TextArea {
     }
 
     pub fn run(&mut self) -> io::Result<Option<String>> {
+        while event::poll(std::time::Duration::from_millis(10))? {
+            let _ = event::read()?;
+        }
         let _guard = RawGuard::new()?;
         let mut stdout = stdout();
         let mut printed_lines = 0;

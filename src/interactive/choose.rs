@@ -1,6 +1,6 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::fmt::Display;
 use std::io::{self, stdout};
 
@@ -32,9 +32,9 @@ impl<T: Display + Clone> Choose<T> {
             selected_prefix: "[x] ".to_string(),
             unselected_prefix: "[ ] ".to_string(),
             header: None,
-            cursor_style: Style::parse("bold cyan").unwrap_or_default(),
+            cursor_style: Style::parse("bold 212").unwrap_or_default(),
             item_style: Style::new(),
-            selected_style: Style::parse("bold green").unwrap_or_default(),
+            selected_style: Style::parse("bold 212").unwrap_or_default(),
         }
     }
 
@@ -55,6 +55,10 @@ impl<T: Display + Clone> Choose<T> {
 
     /// Process a key event. Returns an InteractiveAction.
     pub fn handle_key(&mut self, key: KeyEvent) -> InteractiveAction<Vec<T>> {
+        if key.kind == KeyEventKind::Release {
+            return InteractiveAction::Continue;
+        }
+
         if self.items.is_empty() {
             return InteractiveAction::Submit(Vec::new());
         }
@@ -126,27 +130,47 @@ impl<T: Display + Clone> Choose<T> {
     pub fn render_view(&self) -> String {
         let mut out = String::new();
         if let Some(ref h) = self.header {
-            out.push_str(h);
-            out.push('\n');
+            let header_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_HEADER_FOREGROUND", "#928374");
+            out.push_str(&format!("{header_fg}{h}\x1b[0m\n"));
         }
+
+        let cursor_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_CURSOR_FOREGROUND", "#fabd2f");
+        let selected_fg = crate::interactive::env_fg_ansi("GUM_CHOOSE_SELECTED_FOREGROUND", "#fabd2f");
 
         for (i, item) in self.items.iter().enumerate() {
             let is_cursor = i == self.cursor;
-            let cursor_mark = if is_cursor { &self.cursor_prefix } else { "  " };
 
-            out.push_str(cursor_mark);
+            if is_cursor {
+                out.push_str(&cursor_fg);
+                out.push_str(&self.cursor_prefix);
 
-            if self.multi {
-                let sel_mark = if self.selected.get(i).copied().unwrap_or(false) {
-                    &self.selected_prefix
-                } else {
-                    &self.unselected_prefix
-                };
-                out.push_str(sel_mark);
+                if self.multi {
+                    let sel_mark = if self.selected.get(i).copied().unwrap_or(false) {
+                        &self.selected_prefix
+                    } else {
+                        &self.unselected_prefix
+                    };
+                    out.push_str(sel_mark);
+                }
+
+                out.push_str(&selected_fg);
+                out.push_str(&item.to_string());
+                out.push_str("\x1b[0m\n");
+            } else {
+                out.push_str("  ");
+
+                if self.multi {
+                    let sel_mark = if self.selected.get(i).copied().unwrap_or(false) {
+                        &self.selected_prefix
+                    } else {
+                        &self.unselected_prefix
+                    };
+                    out.push_str(sel_mark);
+                }
+
+                out.push_str(&item.to_string());
+                out.push('\n');
             }
-
-            out.push_str(&item.to_string());
-            out.push('\n');
         }
 
         out
@@ -154,6 +178,9 @@ impl<T: Display + Clone> Choose<T> {
 
     /// Run the interactive selection loop on the current terminal.
     pub fn run(&mut self) -> io::Result<Option<Vec<T>>> {
+        while event::poll(std::time::Duration::from_millis(10))? {
+            let _ = event::read()?;
+        }
         let _guard = RawGuard::new()?;
         let mut stdout = stdout();
         let mut printed_lines = 0;

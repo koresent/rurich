@@ -4,7 +4,9 @@ use crate::text::Text;
 use regex::Regex;
 use std::sync::LazyLock;
 
-static RE_ANSI_SGR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\x1b\[([0-9;]*)m").unwrap());
+static RE_ANSI: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?:\x1b\[([0-9;]*)m)|(?:\x1b\]8;[^;\x1b\x07]*;([^\x1b\x07]*)(?:\x1b\\|\x07))|(?:\x1b\][^\x1b\x07]*(?:\x1b\\|\x07))|(?:\x1b\[[0-9;?]*[a-zA-Z])").unwrap()
+});
 
 /// Decodes raw terminal output containing ANSI escape sequences into styled `Text`.
 #[derive(Clone, Debug, Default)]
@@ -24,7 +26,8 @@ impl AnsiDecoder {
         let mut result = Text::new();
         let mut last_idx = 0;
 
-        for mat in RE_ANSI_SGR.find_iter(text) {
+        for caps in RE_ANSI.captures_iter(text) {
+            let mat = caps.get(0).unwrap();
             let start = mat.start();
             let end = mat.end();
 
@@ -38,9 +41,16 @@ impl AnsiDecoder {
                 result.append(slice, st);
             }
 
-            // Parse SGR codes inside \x1b[...]m
-            let sgr_str = &text[start + 2..end - 1];
-            self.apply_sgr(sgr_str);
+            if let Some(sgr) = caps.get(1) {
+                self.apply_sgr(sgr.as_str());
+            } else if let Some(url) = caps.get(2) {
+                let url_str = url.as_str();
+                if url_str.is_empty() {
+                    self.current_style.link = None;
+                } else {
+                    self.current_style.link = Some(url_str.to_string());
+                }
+            }
 
             last_idx = end;
         }
@@ -179,5 +189,19 @@ mod tests {
         assert_eq!(triplet.0, 255);
         assert_eq!(triplet.1, 128);
         assert_eq!(triplet.2, 0);
+    }
+
+    #[test]
+    fn test_ansi_decoder_osc8_link() {
+        let mut decoder = AnsiDecoder::new();
+        let raw = "\x1b]8;;https://github.com\x1b\\Click Here\x1b]8;;\x1b\\";
+        let text = decoder.decode(raw);
+
+        assert_eq!(text.plain, "Click Here");
+        assert_eq!(text.spans.len(), 1);
+        assert_eq!(
+            text.spans[0].style.link.as_deref(),
+            Some("https://github.com")
+        );
     }
 }

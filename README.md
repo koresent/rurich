@@ -191,6 +191,31 @@ cargo run --all-features --example demo
 
 ---
 
+## Visual Parity & Comparison Suite (Python Rich & Charm Gum)
+
+`rurich` includes a built-in comparison and parity test harness comparing output side-by-side with **Python `rich`** and **Charm `gum`**, and evaluating feature parity:
+
+```bash
+# Launch interactive comparison menu (Choose suite)
+cargo run --all-features --example compare
+
+# Run all side-by-side comparisons sequentially
+cargo run --all-features --example compare -- --all
+
+# Run specific category (tables, panels, markup, trees, markdown, json, gum, exclusives)
+cargo run --all-features --example compare -- --category tables
+cargo run --all-features --example compare -- --category gum
+cargo run --all-features --example compare -- --category exclusives
+
+# Print comprehensive 100% Parity Matrix table
+cargo run --all-features --example compare -- --matrix
+
+# Export standalone HTML report and vector SVG snapshot
+cargo run --all-features --example compare -- --export target/comparison
+```
+
+---
+
 ## Running Tests
 
 ```bash

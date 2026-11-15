@@ -1,6 +1,6 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::style::Style;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::io::{self, stdout};
 
 /// Visual confirmation dialog with styled buttons.
@@ -41,6 +41,10 @@ impl ConfirmDialog {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> InteractiveAction<bool> {
+        if key.kind == KeyEventKind::Release {
+            return InteractiveAction::Continue;
+        }
+
         match key.code {
             KeyCode::Left
             | KeyCode::Right
@@ -79,26 +83,37 @@ impl ConfirmDialog {
 
     pub fn render_view(&self) -> String {
         let mut out = String::new();
-        out.push_str(&self.message);
-        out.push('\n');
+        let prompt_fg = crate::interactive::env_fg_ansi("GUM_CONFIRM_PROMPT_FOREGROUND", "#ebdbb2");
+        out.push_str(&format!("{prompt_fg}{}\x1b[0m\n", self.message));
 
-        let yes_btn = if self.active {
-            format!("\x1b[1;97;42m[ {} ]\x1b[0m", self.yes_label)
+        let sel_bg = crate::interactive::env_bg_ansi("GUM_CONFIRM_SELECTED_BACKGROUND", "#b8bb26");
+        let sel_fg = crate::interactive::env_fg_ansi("GUM_CONFIRM_SELECTED_FOREGROUND", "#282828");
+        let unsel_bg = crate::interactive::env_bg_ansi("GUM_CONFIRM_UNSELECTED_BACKGROUND", "#3c3836");
+        let unsel_fg = crate::interactive::env_fg_ansi("GUM_CONFIRM_UNSELECTED_FOREGROUND", "#ebdbb2");
+
+        let selected_style = format!("{sel_bg}{sel_fg}");
+        let unselected_style = format!("{unsel_bg}{unsel_fg}");
+
+        let (yes_btn, no_btn) = if self.active {
+            (
+                format!("{selected_style}   {}   \x1b[0m", self.yes_label),
+                format!("{unselected_style}   {}   \x1b[0m", self.no_label),
+            )
         } else {
-            format!("\x1b[2m  {}  \x1b[0m", self.yes_label)
+            (
+                format!("{unselected_style}   {}   \x1b[0m", self.yes_label),
+                format!("{selected_style}   {}   \x1b[0m", self.no_label),
+            )
         };
 
-        let no_btn = if !self.active {
-            format!("\x1b[1;97;41m[ {} ]\x1b[0m", self.no_label)
-        } else {
-            format!("\x1b[2m  {}  \x1b[0m", self.no_label)
-        };
-
-        out.push_str(&format!("  {yes_btn}    {no_btn}\n"));
+        out.push_str(&format!(" {yes_btn}  {no_btn}\n"));
         out
     }
 
     pub fn run(&mut self) -> io::Result<Option<bool>> {
+        while event::poll(std::time::Duration::from_millis(10))? {
+            let _ = event::read()?;
+        }
         let _guard = RawGuard::new()?;
         let mut stdout = stdout();
         let mut printed_lines = 0;
