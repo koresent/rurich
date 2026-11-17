@@ -8,7 +8,21 @@ pub mod pager;
 use crate::color::Color;
 use crossterm::cursor::{Hide, MoveToColumn, MoveUp, Show};
 use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
-use std::io::{self, Write, stdout};
+use std::io::{self, IsTerminal, Write, stderr, stdout};
+
+/// Helper to get an appropriate terminal writer for interactive UI rendering.
+/// If stdout is a TTY, returns stdout. Otherwise, falls back to stderr (if TTY) or /dev/tty.
+pub fn terminal_writer() -> Box<dyn Write> {
+    if stdout().is_terminal() {
+        Box::new(stdout())
+    } else if stderr().is_terminal() {
+        Box::new(stderr())
+    } else if let Ok(f) = std::fs::OpenOptions::new().write(true).open("/dev/tty") {
+        Box::new(f)
+    } else {
+        Box::new(stdout())
+    }
+}
 
 /// Helper to resolve foreground ANSI sequence from environment variable with fallback.
 pub fn env_fg_ansi(var: &str, fallback: &str) -> String {
@@ -53,7 +67,7 @@ pub struct RawGuard;
 impl RawGuard {
     pub fn new() -> io::Result<Self> {
         enable_raw_mode()?;
-        let mut out = stdout();
+        let mut out = terminal_writer();
         let _ = crossterm::execute!(out, Hide);
         let _ = out.flush();
         Ok(Self)
@@ -62,7 +76,7 @@ impl RawGuard {
 
 impl Drop for RawGuard {
     fn drop(&mut self) {
-        let mut out = stdout();
+        let mut out = terminal_writer();
         let _ = crossterm::execute!(out, Show, MoveToColumn(0));
         let _ = out.flush();
         let _ = disable_raw_mode();

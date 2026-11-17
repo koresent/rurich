@@ -1,7 +1,7 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::fs;
-use std::io::{self, stdout};
+use std::io;
 use std::path::{Path, PathBuf};
 
 /// Interactive file picker and directory tree navigator.
@@ -145,12 +145,12 @@ impl FilePicker {
 
     pub fn run(&mut self) -> io::Result<Option<PathBuf>> {
         let _guard = RawGuard::new()?;
-        let mut stdout = stdout();
+        let mut term_out = crate::interactive::terminal_writer();
         let mut printed_lines = 0;
 
         loop {
             let view = self.render_view();
-            redraw_view(&mut stdout, &view, &mut printed_lines)?;
+            redraw_view(&mut term_out, &view, &mut printed_lines)?;
 
             if let Event::Key(key) = event::read()? {
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {

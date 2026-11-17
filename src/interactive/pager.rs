@@ -2,7 +2,7 @@ use crate::console::Console;
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crate::protocol::Renderable;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use std::io::{self, stdout};
+use std::io;
 
 /// Interactive scrollable text and document pager.
 pub struct Pager {
@@ -127,12 +127,12 @@ impl Pager {
 
     pub fn run(&mut self) -> io::Result<()> {
         let _guard = RawGuard::new()?;
-        let mut stdout = stdout();
+        let mut term_out = crate::interactive::terminal_writer();
         let mut printed_lines = 0;
 
         loop {
             let view = self.render_view();
-            redraw_view(&mut stdout, &view, &mut printed_lines)?;
+            redraw_view(&mut term_out, &view, &mut printed_lines)?;
 
             if let Event::Key(key) = event::read()? {
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {

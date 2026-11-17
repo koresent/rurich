@@ -1,6 +1,6 @@
 use crate::interactive::{InteractiveAction, RawGuard, redraw_view};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use std::io::{self, stdout};
+use std::io;
 
 /// Single-line interactive input prompt with placeholder and password masking.
 pub struct Input {
@@ -151,12 +151,12 @@ impl Input {
             let _ = event::read()?;
         }
         let _guard = RawGuard::new()?;
-        let mut stdout = stdout();
+        let mut term_out = crate::interactive::terminal_writer();
         let mut printed_lines = 0;
 
         loop {
             let view = self.render_view();
-            redraw_view(&mut stdout, &view, &mut printed_lines)?;
+            redraw_view(&mut term_out, &view, &mut printed_lines)?;
 
             if let Event::Key(key) = event::read()? {
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -310,12 +310,12 @@ impl TextArea {
             let _ = event::read()?;
         }
         let _guard = RawGuard::new()?;
-        let mut stdout = stdout();
+        let mut term_out = crate::interactive::terminal_writer();
         let mut printed_lines = 0;
 
         loop {
             let view = self.render_view();
-            redraw_view(&mut stdout, &view, &mut printed_lines)?;
+            redraw_view(&mut term_out, &view, &mut printed_lines)?;
 
             if let Event::Key(key) = event::read()? {
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
